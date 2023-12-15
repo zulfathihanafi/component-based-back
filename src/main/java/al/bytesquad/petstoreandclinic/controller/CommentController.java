@@ -1,5 +1,6 @@
 package al.bytesquad.petstoreandclinic.controller;
 
+import al.bytesquad.petstoreandclinic.entity.Admin;
 import al.bytesquad.petstoreandclinic.entity.Comment;
 import al.bytesquad.petstoreandclinic.entity.Forum;
 import al.bytesquad.petstoreandclinic.entity.User;
@@ -12,6 +13,7 @@ import al.bytesquad.petstoreandclinic.service.CommentService;
 import al.bytesquad.petstoreandclinic.service.ForumService;
 import al.bytesquad.petstoreandclinic.service.NLPService;
 import al.bytesquad.petstoreandclinic.service.ShopService;
+import al.bytesquad.petstoreandclinic.service.exception.ResourceNotFoundException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,16 +25,20 @@ import javax.validation.Valid;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Objects;
+
 
 @RestController
 @RequestMapping("/comment")
 @CrossOrigin(origins = "http://localhost:3000")
 public class CommentController {
     private final CommentService commentService;
+    private final ForumService forumService;
 
     @Autowired
-    public CommentController(CommentService forumService) {
-        this.commentService = forumService;
+    public CommentController(CommentService commentService, ForumService forumService) {
+        this.commentService = commentService;
+        this.forumService = forumService;
     }
 
     @GetMapping
@@ -40,6 +46,17 @@ public class CommentController {
     public List<Comment> get(@RequestParam(required = false) String keyword, Principal principal) {
         return commentService.getAllComments();
     }
+
+    @GetMapping("/forum/{forum_id}/comments")
+    public ResponseEntity<List<Comment>> getAllCommentsByTutorialId(@PathVariable(value = "forum_id") Long forumID) {
+    if (Objects.isNull(forumService.getForumById(forumID))) {
+      throw new ResourceNotFoundException("Forum", "id", forumID);
+    }
+
+    List<Comment> comments = commentService.getCommentByForum(forumID);
+    return new ResponseEntity<>(comments, HttpStatus.OK);
+  }
+    
 
     // create pet
     @PostMapping("/create")
@@ -65,7 +82,7 @@ public class CommentController {
             return new ResponseEntity<>(updatedComment, HttpStatus.OK);
         } catch (CommentService.OffensiveComments ex) {
             // Handle offensive comments exception here
-            String errorMessage = "Offensive comment detected: " + ex.getMessage();
+            String errorMessage = "Problematic comment detected: " + ex.getMessage();
             return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
         }
     }

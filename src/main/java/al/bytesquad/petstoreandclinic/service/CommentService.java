@@ -45,6 +45,9 @@ public class CommentService {
         return commentRepository.findById(id).orElse(null);
     }
 
+    public List<Comment> getCommentByForum(Long id){
+        return commentRepository.findByForumId(id);
+    }
     public Comment create(@RequestBody String forumString) throws JsonProcessingException, OffensiveComments{
         
         CommentDTO commentDTO = objectMapper.readValue(forumString, CommentDTO.class);

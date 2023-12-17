@@ -21,7 +21,7 @@ public class AuthController {
 
     @PostMapping("/login")
     @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<StatusResponse> authenticateUser(@RequestBody String loginDTO) throws Exception {
+    public ResponseEntity<?> authenticateUser(@RequestBody String loginDTO) throws Exception {
         return authService.authenticate(loginDTO);
     }
 
@@ -31,10 +31,10 @@ public class AuthController {
         return authService.auth(sessionId);
     }
 
-    @GetMapping("/refreshToken")
-    @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<JWTAuthResponse> refreshToken() {
-        return authService.refreshToken();
-    }
+    // @GetMapping("/refreshToken")
+    // @CrossOrigin(origins = "http://localhost:3000")
+    // public ResponseEntity<JWTAuthResponse> refreshToken() {
+    //     return authService.refreshToken();
+    // }
 
 }

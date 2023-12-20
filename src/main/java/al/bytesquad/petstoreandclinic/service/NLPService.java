@@ -32,7 +32,6 @@ public class NLPService {
         } catch (OrtException e) {
             e.printStackTrace();
         }
-
         // Input text to transform
         String[] inputText = {text};
 

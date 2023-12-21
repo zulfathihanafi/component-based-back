@@ -50,6 +50,9 @@ public class FeedbackEntity {
     @Column(name = "message")
     private String message;
 
+    @Column(name = "sentiment")
+    private String sentiment;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

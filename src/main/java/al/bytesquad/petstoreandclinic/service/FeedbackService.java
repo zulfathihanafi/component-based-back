@@ -8,6 +8,8 @@ import al.bytesquad.petstoreandclinic.payload.entityDTO.FeedbackDTO;
 import al.bytesquad.petstoreandclinic.payload.saveDTO.FeedbackSaveDTO;
 import al.bytesquad.petstoreandclinic.repository.*;
 import al.bytesquad.petstoreandclinic.service.exception.ResourceNotFoundException;
+import edu.stanford.nlp.pipeline.CoreNLPProtos.Sentiment;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.criteria.Path;
@@ -36,12 +38,17 @@ public class FeedbackService {
     private final DoctorRepository doctorRepository;
     private final ObjectMapper objectMapper;
     private final ShopRepository shopRepository;
+    private final SentimentService sentimentService;
 
-    public FeedbackService(FeedbackRepository feedbackRepository, ModelMapper modelMapper,
-                           ClientRepository clientRepository, UserRepository userRepository, RoleRepository roleRepository,
-                           ManagerRepository managerRepository,
-                           DoctorRepository doctorRepository, ObjectMapper objectMapper,
-                           ShopRepository shopRepository) {
+    public FeedbackService (
+            FeedbackRepository feedbackRepository, ModelMapper modelMapper,
+            ClientRepository clientRepository, UserRepository userRepository, RoleRepository roleRepository,
+            ManagerRepository managerRepository,
+            DoctorRepository doctorRepository, ObjectMapper objectMapper,
+            ShopRepository shopRepository,
+            SentimentService sentimentService) {
+
+
         this.feedbackRepository = feedbackRepository;
         this.modelMapper = modelMapper;
         this.clientRepository = clientRepository;
@@ -50,6 +57,8 @@ public class FeedbackService {
         this.managerRepository = managerRepository;
         this.doctorRepository = doctorRepository;
         this.objectMapper = objectMapper;
+        this.sentimentService = sentimentService;
+        // this.sentimentService = new SentimentService();
 
         modelMapper.addMappings(new PropertyMap<FeedbackEntity, FeedbackDTO>() {
             @Override
@@ -60,18 +69,28 @@ public class FeedbackService {
         this.shopRepository = shopRepository;
     }
 
-    public FeedbackDTO create(String jsonString, Principal principal) throws JsonProcessingException {
+    public FeedbackDTO create(String jsonString, Principal principal) throws JsonProcessingException 
+    {
         FeedbackSaveDTO feedbackSaveDTO = objectMapper.readValue(jsonString, FeedbackSaveDTO.class);
         FeedbackEntity feedback = new FeedbackEntity();
+
         feedback.setClient(clientRepository.findClientById(feedbackSaveDTO.getClientId()).orElseThrow(() -> new ResourceNotFoundException("Client", "id", feedbackSaveDTO.getClientId())));
+
         if(feedbackSaveDTO.getShopId()!=null)
             feedback.setShop(shopRepository.findById(feedbackSaveDTO.getShopId()).orElseThrow(() -> new ResourceNotFoundException("Shop", "id", feedbackSaveDTO.getShopId())));
         else feedback.setShop(null);
+
         if(feedbackSaveDTO.getDoctorId()!=null)
             feedback.setDoctor(doctorRepository.findDoctorById(feedbackSaveDTO.getDoctorId()).orElseThrow(() -> new ResourceNotFoundException("Feedback", "id", feedbackSaveDTO.getDoctorId())));
         else feedback.setDoctor(null);
+        
         feedback.setMessage(feedbackSaveDTO.getMessage());
         feedback.setTitle(feedbackSaveDTO.getTitle());
+
+        //Analyze sentiment
+        String sentiment = sentimentService.analyzeSentiment(feedbackSaveDTO.getMessage());
+        feedback.setSentiment(sentiment);   //define this in FeedbackEntity
+
         //Feedback feedback = modelMapper.map(feedbackSaveDTO, Feedback.class);
         /*String loggedInEmail = principal.getName();
         Client client = clientRepository.findByEmail(loggedInEmail);

@@ -7,6 +7,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+//sentiment service
+import al.bytesquad.petstoreandclinic.service.SentimentService;
+
+
 import javax.validation.Valid;
 import java.security.Principal;
 import java.util.List;
@@ -16,9 +20,11 @@ import java.util.List;
 public class FeedbackController {
 
     private final FeedbackService feedbackService;
+    private final SentimentService sentimentService;
 
-    public FeedbackController(FeedbackService feedbackService) {
+    public FeedbackController(FeedbackService feedbackService, SentimentService sentimentService) {
         this.feedbackService = feedbackService;
+        this.sentimentService = sentimentService;
     }
 
     @PostMapping("/create")
@@ -42,5 +48,31 @@ public class FeedbackController {
     @CrossOrigin(origins = "http://localhost:3000")
     public String delete(@PathVariable(name = "id") long id) {
         return feedbackService.delete(id);
+    }
+
+    @PostMapping("/sentiment")
+    @CrossOrigin(origins = "http://localhost:3000")
+    public ResponseEntity<String> analyzeSentiment(@RequestBody String text) {
+
+        try {
+            String sentiment = sentimentService.analyzeSentiment(text);
+            return ResponseEntity.ok(sentiment);
+        } catch (Exception e) {
+            // Log the exception for debugging
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error during sentiment analysis");
+        } 
+
+        // String sentiment = sentimentService.analyzeSentiment(text);
+        // return ResponseEntity.ok(sentiment);
+
+
+        // Perform sentiment analysis logic here...
+        // For simplicity, let's assume a basic positive/negative check.
+        // if (text.toLowerCase().contains("positive")) {
+        //     return ResponseEntity.ok("Positive");
+        // } else {
+        //     return ResponseEntity.ok("Negative");
+        // }
     }
 }

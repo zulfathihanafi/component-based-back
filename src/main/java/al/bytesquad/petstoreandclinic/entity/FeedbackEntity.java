@@ -1,3 +1,5 @@
+//Feedback entity
+
 package al.bytesquad.petstoreandclinic.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
@@ -18,7 +20,7 @@ import java.util.Objects;
 @Setter
 @ToString
 @RequiredArgsConstructor
-public class Feedback {
+public class FeedbackEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -52,7 +54,7 @@ public class Feedback {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        Feedback feedback = (Feedback) o;
+        FeedbackEntity feedback = (FeedbackEntity) o;
         return id != null && Objects.equals(id, feedback.id);
     }
 

@@ -83,7 +83,7 @@ public class Client {
     @ToString.Exclude
     @LazyCollection(LazyCollectionOption.FALSE)
     @JsonManagedReference
-    private List<Feedback> feedbacks;
+    private List<FeedbackEntity> feedbacks;
 
     @OneToMany
     @ToString.Exclude

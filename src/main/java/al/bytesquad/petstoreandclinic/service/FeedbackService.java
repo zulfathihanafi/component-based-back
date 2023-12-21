@@ -1,7 +1,7 @@
 package al.bytesquad.petstoreandclinic.service;
 
 import al.bytesquad.petstoreandclinic.entity.Client;
-import al.bytesquad.petstoreandclinic.entity.Feedback;
+import al.bytesquad.petstoreandclinic.entity.FeedbackEntity;
 import al.bytesquad.petstoreandclinic.entity.Role;
 import al.bytesquad.petstoreandclinic.entity.User;
 import al.bytesquad.petstoreandclinic.payload.entityDTO.FeedbackDTO;
@@ -51,7 +51,7 @@ public class FeedbackService {
         this.doctorRepository = doctorRepository;
         this.objectMapper = objectMapper;
 
-        modelMapper.addMappings(new PropertyMap<Feedback, FeedbackDTO>() {
+        modelMapper.addMappings(new PropertyMap<FeedbackEntity, FeedbackDTO>() {
             @Override
             protected void configure() {
                 map().setId(source.getId());
@@ -62,7 +62,7 @@ public class FeedbackService {
 
     public FeedbackDTO create(String jsonString, Principal principal) throws JsonProcessingException {
         FeedbackSaveDTO feedbackSaveDTO = objectMapper.readValue(jsonString, FeedbackSaveDTO.class);
-        Feedback feedback = new Feedback();
+        FeedbackEntity feedback = new FeedbackEntity();
         feedback.setClient(clientRepository.findClientById(feedbackSaveDTO.getClientId()).orElseThrow(() -> new ResourceNotFoundException("Client", "id", feedbackSaveDTO.getClientId())));
         if(feedbackSaveDTO.getShopId()!=null)
             feedback.setShop(shopRepository.findById(feedbackSaveDTO.getShopId()).orElseThrow(() -> new ResourceNotFoundException("Shop", "id", feedbackSaveDTO.getShopId())));
@@ -80,13 +80,13 @@ public class FeedbackService {
     }
 
     public String delete(long id) {
-        Feedback feedback = feedbackRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Feedback", "id", id));
+        FeedbackEntity feedback = feedbackRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Feedback", "id", id));
         feedbackRepository.delete(feedback);
         return "Feedback deleted successfully!";
     }
 
     public FeedbackDTO getById(long id) {
-        Feedback feedback = feedbackRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Feedback", "id", id));
+        FeedbackEntity feedback = feedbackRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Feedback", "id", id));
         return modelMapper.map(feedback, FeedbackDTO.class);
     }
 
@@ -101,7 +101,7 @@ public class FeedbackService {
             pairs.put(strings[0], strings[1]);
         }
 
-        List<Feedback> feedbacks = feedbackRepository.findAll((root, query, criteriaBuilder) -> {
+        List<FeedbackEntity> feedbacks = feedbackRepository.findAll((root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             for (String key : pairs.keySet()) {
                 Path<Object> fieldPath = root.get(key);

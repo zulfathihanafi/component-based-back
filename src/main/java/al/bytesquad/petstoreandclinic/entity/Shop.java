@@ -69,7 +69,7 @@ public class Shop {
     @ToString.Exclude
     @LazyCollection(LazyCollectionOption.FALSE)
     @JsonManagedReference
-    private List<Feedback> feedbacks;
+    private List<FeedbackEntity> feedbacks;
 
     @Override
     public boolean equals(Object o) {

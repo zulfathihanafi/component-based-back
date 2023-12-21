@@ -4,6 +4,7 @@ import al.bytesquad.petstoreandclinic.entity.PetServices;
 import al.bytesquad.petstoreandclinic.payload.entityDTO.ServiceDTO;
 import al.bytesquad.petstoreandclinic.payload.saveDTO.ServiceSaveDTO;
 import al.bytesquad.petstoreandclinic.repository.ServiceRepository;
+import al.bytesquad.petstoreandclinic.service.exception.ResourceNotFoundException;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 
@@ -48,7 +49,6 @@ public class ServiceService {
         return modelMapper.map(serviceRepository.save(petService), ServiceDTO.class);
     }
 
-
     public List<ServiceDTO> getAll(String keyword, Principal principal) {
         if (keyword == null)
             return serviceRepository.findAll().stream()
@@ -71,8 +71,21 @@ public class ServiceService {
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         });
 
-        
         return petServices.stream().map(petService -> modelMapper.map(petService, ServiceDTO.class))
                 .collect(Collectors.toList());
+    }
+
+    public ServiceDTO update(String jsonString, long id) throws JsonProcessingException {
+        ServiceSaveDTO serviceSaveDTO = objectMapper.readValue(jsonString, ServiceSaveDTO.class);
+       PetServices petService = serviceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Service", "id", id));
+        petService.setTitle(serviceSaveDTO.getTitle());
+        petService.setDescription(serviceSaveDTO.getDescription());
+      
+        return modelMapper.map(serviceRepository.save(petService), ServiceDTO.class);
+    }
+
+    public void delete(long id){
+        serviceRepository.deleteById(id);
     }
 }

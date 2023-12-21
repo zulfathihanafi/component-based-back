@@ -139,6 +139,11 @@
     <artifactId>HikariCP</artifactId>
     <version>4.0.3</version> <!-- Check for the latest version on Maven Central -->
 </dependency>
+	<dependency>
+		<groupId>edu.stanford.nlp</groupId>
+		<artifactId>stanford-corenlp</artifactId>
+		<version>3.9.2</version>
+	</dependency>
 	</dependencies>
 
 	<build>

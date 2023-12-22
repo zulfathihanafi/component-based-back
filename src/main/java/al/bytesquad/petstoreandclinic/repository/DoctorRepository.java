@@ -21,4 +21,8 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long>, JpaSpecif
     Doctor findByEmail(String email);
 
     List<Doctor> findAllByEnabled(Boolean enabled);
+
+    List<Doctor> findAllByEnabledAndShopEnabled(boolean doctorEnabled, boolean shopEnabled);
+
+
 }

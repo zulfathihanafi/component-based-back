@@ -93,9 +93,19 @@ public class DoctorService {
     }
 
     public List<DoctorDTO> getAll(String keyword, Principal principal) {
-        if (keyword == null)
-            return doctorRepository.findAllByEnabled(true).stream().map(doctor -> modelMapper.map(doctor, DoctorDTO.class)).collect(Collectors.toList());
-
+        if (keyword == null) {
+            List<Doctor> activeDoctors = doctorRepository.findAllByEnabled(true); // Get active doctors
+    
+            // Filter the active doctors based on associated shop's enabled property
+            List<Doctor> filteredDoctors = activeDoctors.stream()
+                    .filter(doctor -> doctor.getShop() != null && doctor.getShop().isEnabled())
+                    .collect(Collectors.toList());
+    
+            return filteredDoctors.stream()
+                    .map(doctor -> modelMapper.map(doctor, DoctorDTO.class))
+                    .collect(Collectors.toList());
+        }    
+        
         List<String> keyValues = List.of(keyword.split(","));
         HashMap<String, String> pairs = new HashMap<>();
         for (String s : keyValues) {

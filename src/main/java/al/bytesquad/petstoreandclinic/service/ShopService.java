@@ -61,6 +61,8 @@ public class ShopService {
         shop.setAddress(shopSaveDTO.getAddress());
         shop.setCity(shopSaveDTO.getCity());
         shop.setCountry(shopSaveDTO.getCountry());
+        shop.setStartWorkingTime(shopSaveDTO.getStartWorkingTime());
+        shop.setEndWorkingTime(shopSaveDTO.getEndWorkingTime());
         if (shopSaveDTO.getManagerId() != null)
             shop.setManager(managerRepository.findById(shopSaveDTO.getManagerId()).orElseThrow(() -> new ResourceNotFoundException("Shop", "id", id)));
         return modelMapper.map(shopRepository.save(shop), ShopDTO.class);

@@ -11,6 +11,7 @@ import org.hibernate.Hibernate;
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -47,6 +48,12 @@ public class Shop {
     @Column(name = "enabled")
     private boolean enabled = true;
 
+    @Column(name = "startWorkingTime")
+    private LocalTime startWorkingTime;
+
+    @Column(name = "endWorkingTime")
+    private LocalTime endWorkingTime;
+
     @OneToMany
     @ToString.Exclude
     @LazyCollection(LazyCollectionOption.FALSE)
@@ -73,8 +80,10 @@ public class Shop {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o))
+            return false;
         Shop shop = (Shop) o;
         return id != null && Objects.equals(id, shop.id);
     }

@@ -35,10 +35,24 @@ public class AppointmentController {
         return new ResponseEntity<>(appointmentService.book(appointmentSaveDTO, principal), HttpStatus.CREATED);
     }
 
-    //delete appointment
-    @GetMapping("/remove/{id}")
+    //update appointment
+    @PutMapping("/update/{id}")
     @CrossOrigin(origins = "http://localhost:3000")
-    public String delete(@PathVariable(name = "id") long id, Principal principal) {
-        return appointmentService.delete(id, principal);
+    public ResponseEntity<AppointmentDTO> update(@Valid @RequestBody String appointmentSaveDTO, @PathVariable(name = "id") long id) throws JsonProcessingException {
+        return new ResponseEntity<>(appointmentService.update(appointmentSaveDTO, id), HttpStatus.OK);
     }
+
+    //delete appointment
+    @DeleteMapping("/remove/{id}")
+    public ResponseEntity<String> delete(@PathVariable(name = "id") long id, Principal principal) {
+        try {
+            appointmentService.delete(id, principal);
+            // If deletion is successful, return a success response with HTTP status 200
+            return new ResponseEntity<>("Deleted successfully", HttpStatus.OK);
+        } catch (Exception e) {
+            // If an error occurs during deletion, return an error response with HTTP status 500
+            return new ResponseEntity<>("Error deleting the record: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
 }

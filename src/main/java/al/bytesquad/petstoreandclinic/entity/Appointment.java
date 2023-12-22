@@ -42,6 +42,12 @@ public class Appointment {
     @JsonBackReference
     private Doctor doctor;
 
+    @ManyToOne
+    @JoinColumn(name = "service_id")
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @JsonBackReference
+    private PetServices petServices;
+
     @Column(name = "start_time")
     private Date startTime;
 

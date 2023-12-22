@@ -16,7 +16,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,6 +30,7 @@ public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final ModelMapper modelMapper;
     private final ClientRepository clientRepository;
+    private final ServiceRepository serviceRepository;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final DoctorRepository doctorRepository;
@@ -42,7 +46,8 @@ public class AppointmentService {
                               DoctorRepository doctorRepository,
                               ManagerRepository managerRepository, ObjectMapper objectMapper,
                               PetRepository petRepository,
-                              ProductRepository productRepository) {
+                              ProductRepository productRepository, 
+                              ServiceRepository serviceRepository) {
         this.appointmentRepository = appointmentRepository;
         this.modelMapper = modelMapper;
         this.clientRepository = clientRepository;
@@ -50,6 +55,7 @@ public class AppointmentService {
         this.roleRepository = roleRepository;
         this.doctorRepository = doctorRepository;
         this.managerRepository = managerRepository;
+        this.serviceRepository = serviceRepository;
         this.objectMapper = objectMapper;
 
         modelMapper.addMappings(new PropertyMap<Appointment, AppointmentDTO>() {
@@ -69,14 +75,32 @@ public class AppointmentService {
         Client client = clientRepository.findClientById(appointmentSaveDTO.getClientId()).orElseThrow(() -> new ResourceNotFoundException("Client", "id", appointmentSaveDTO.getClientId()));
         Doctor doctor = doctorRepository.findDoctorById(appointmentSaveDTO.getDoctorId()).orElseThrow(() -> new ResourceNotFoundException("Doctor", "id", appointmentSaveDTO.getDoctorId()));
         Pet pet = petRepository.findById(appointmentSaveDTO.getPetId()).orElseThrow(() -> new ResourceNotFoundException("Pet", "id", appointmentSaveDTO.getPetId()));
+        PetServices petService = serviceRepository.findById(appointmentSaveDTO.getServiceId()).orElseThrow(() -> new ResourceNotFoundException("Service", "id", appointmentSaveDTO.getServiceId()));
         appointment.setClient(client);
         appointment.setDoctor(doctor);
         appointment.setPet(pet);
+        appointment.setPetServices(petService);
         /*String email = principal.getName();
         Client client = clientRepository.findByEmail(email);
         appointment.setClient(client);*/
         Appointment newAppointment = appointmentRepository.save(appointment);
         return modelMapper.map(newAppointment, AppointmentDTO.class);
+    }
+
+    public AppointmentDTO update(String jsonString, long id) throws JsonProcessingException {
+        AppointmentSaveDTO appointmentSaveDTO = objectMapper.readValue(jsonString, AppointmentSaveDTO.class);
+        Appointment appointment = appointmentRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Appointment", "id", id));
+        appointment.setStartTime(appointmentSaveDTO.getStartTime());
+        appointment.setFinishTime(appointmentSaveDTO.getFinishTime());
+        if (appointmentSaveDTO.getClientId() != null)
+            appointment.setClient(clientRepository.findById(appointmentSaveDTO.getClientId()).orElseThrow(() -> new ResourceNotFoundException("Appointment", "id", id)));
+        if (appointmentSaveDTO.getDoctorId() != null)
+            appointment.setDoctor(doctorRepository.findById(appointmentSaveDTO.getDoctorId()).orElseThrow(() -> new ResourceNotFoundException("Appointment", "id", id)));
+        if (appointmentSaveDTO.getPetId() != null)
+            appointment.setPet(petRepository.findById(appointmentSaveDTO.getPetId()).orElseThrow(() -> new ResourceNotFoundException("Appointment", "id", id)));
+        if (appointmentSaveDTO.getServiceId() != null)
+            appointment.setPetServices(serviceRepository.findById(appointmentSaveDTO.getServiceId()).orElseThrow(() -> new ResourceNotFoundException("Appointment", "id", id)));
+        return modelMapper.map(appointmentRepository.save(appointment), AppointmentDTO.class);
     }
 
     public String delete(long id, Principal principal) {
@@ -147,4 +171,25 @@ public class AppointmentService {
             return null;*/
         return appointments.stream().map(appointment -> modelMapper.map(appointment, AppointmentDTO.class)).collect(Collectors.toList());
     }
+
+//     private AppointmentDTO mapAppointmentToDTO(Appointment appointment) {
+//     AppointmentDTO dto = modelMapper.map(appointment, AppointmentDTO.class);
+
+//     // Parse the datetime(6) values into Date objects
+//     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+
+//     try {
+//         Date startTime = dateFormat.parse(appointment.getStartTime().toString()); // Access the attribute directly
+//         Date finishTime = dateFormat.parse(appointment.getFinishTime().toString()); // Access the attribute directly
+
+//         dto.setStartTime(startTime);
+//         dto.setFinishTime(finishTime);
+//     } catch (ParseException e) {
+//         // Handle parsing error
+//         e.printStackTrace();
+//     }
+
+//     return dto;
+// }
+
 }

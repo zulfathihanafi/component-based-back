@@ -54,17 +54,17 @@ public class FeedbackController {
     @CrossOrigin(origins = "http://localhost:3000")
     public ResponseEntity<String> analyzeSentiment(@RequestBody String text) {
 
-        try {
-            String sentiment = sentimentService.analyzeSentiment(text);
-            return ResponseEntity.ok(sentiment);
-        } catch (Exception e) {
-            // Log the exception for debugging
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error during sentiment analysis");
-        } 
+        // try {
+        //     String sentiment = sentimentService.analyzeSentiment(text);
+        //     return ResponseEntity.ok(sentiment);
+        // } catch (Exception e) {
+        //     // Log the exception for debugging
+        //     e.printStackTrace();
+        //     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error during sentiment analysis");
+        // } 
 
-        // String sentiment = sentimentService.analyzeSentiment(text);
-        // return ResponseEntity.ok(sentiment);
+        String sentiment = sentimentService.analyzeSentiment(text);
+        return ResponseEntity.ok(sentiment);
 
 
         // Perform sentiment analysis logic here...

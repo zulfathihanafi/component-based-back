@@ -6,17 +6,13 @@ import al.bytesquad.petstoreandclinic.entity.Pet;
 import al.bytesquad.petstoreandclinic.entity.PetServices;
 import lombok.Data;
 
-import java.util.Date;
-
 @Data
 public class AppointmentDTO {
-
     private long id;
     private Client client;
     private Pet pet;
     private Doctor doctor;
     private PetServices petServices;
-    private Date startTime;
-    private Date finishTime;
-
+    private String startTime;
+    private String finishTime;
 }

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.security.Principal;
+import java.text.ParseException;
 import java.util.List;
 
 @RestController
@@ -28,25 +29,36 @@ public class AppointmentController {
         return appointmentService.getAll(keyword, principal);
     }
 
-    //book appointment
+    // book appointment
     @PostMapping("/create")
     @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<AppointmentDTO> book(@Valid @RequestBody String appointmentSaveDTO, Principal principal) throws JsonProcessingException {
-        return new ResponseEntity<>(appointmentService.book(appointmentSaveDTO, principal), HttpStatus.CREATED);
+    public ResponseEntity<AppointmentDTO> book(@Valid @RequestBody String appointmentSaveDTO, Principal principal) {
+        try {
+            return new ResponseEntity<>(appointmentService.book(appointmentSaveDTO, principal), HttpStatus.CREATED);
+        } catch (JsonProcessingException | ParseException ex) {
+            // Handle the exception or return an appropriate response
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // For example, return a 500 Internal Server Error
+        }
     }
 
     //update appointment
     @PutMapping("/update/{id}")
     @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<AppointmentDTO> update(@Valid @RequestBody String appointmentSaveDTO, @PathVariable(name = "id") long id) throws JsonProcessingException {
-        return new ResponseEntity<>(appointmentService.update(appointmentSaveDTO, id), HttpStatus.OK);
+    public ResponseEntity<AppointmentDTO> update(@Valid @RequestBody String appointmentSaveDTO, @PathVariable(name = "id") long id) {
+        try {
+            return new ResponseEntity<>(appointmentService.update(appointmentSaveDTO, id), HttpStatus.OK);
+        } catch (JsonProcessingException | ParseException ex) {
+            // Handle the exception or return an appropriate response
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // For example, return a 500 Internal Server Error
+        }
     }
 
     //delete appointment
+    //delete service
     @DeleteMapping("/remove/{id}")
-    public ResponseEntity<String> delete(@PathVariable(name = "id") long id, Principal principal) {
+    public ResponseEntity<String> delete(@PathVariable(name = "id") long id) {
         try {
-            appointmentService.delete(id, principal);
+            appointmentService.delete(id);
             // If deletion is successful, return a success response with HTTP status 200
             return new ResponseEntity<>("Deleted successfully", HttpStatus.OK);
         } catch (Exception e) {
@@ -54,5 +66,16 @@ public class AppointmentController {
             return new ResponseEntity<>("Error deleting the record: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    // @DeleteMapping("/remove/{id}")
+    // public ResponseEntity<String> delete(@PathVariable(name = "id") long id, Principal principal) {
+    //     try {
+    //         appointmentService.delete(id, principal);
+    //         // If deletion is successful, return a success response with HTTP status 200
+    //         return new ResponseEntity<>("Deleted successfully", HttpStatus.OK);
+    //     } catch (Exception e) {
+    //         // If an error occurs during deletion, return an error response with HTTP status 500
+    //         return new ResponseEntity<>("Error deleting the record: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    //     }
+    // }
     
 }

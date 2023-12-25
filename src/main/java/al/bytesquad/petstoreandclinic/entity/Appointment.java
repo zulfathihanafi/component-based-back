@@ -1,6 +1,7 @@
 package al.bytesquad.petstoreandclinic.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.Hibernate;
@@ -48,11 +49,14 @@ public class Appointment {
     @JsonBackReference
     private PetServices petServices;
 
+    @JsonFormat(pattern = "EEE MMM dd HH:mm:ss z yyyy", timezone = "Asia/Kuala_Lumpur")
     @Column(name = "start_time")
     private Date startTime;
 
+    @JsonFormat(pattern = "EEE MMM dd HH:mm:ss z yyyy", timezone = "Asia/Kuala_Lumpur")
     @Column(name = "finish_Time")
     private Date finishTime;
+
 
     @Override
     public boolean equals(Object o) {

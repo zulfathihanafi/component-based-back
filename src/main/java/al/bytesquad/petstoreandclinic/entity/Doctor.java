@@ -65,11 +65,11 @@ public class Doctor {
     @JoinColumn(name = "role_id")
     private Role role;
 
-    @OneToMany
-    @ToString.Exclude
-    @LazyCollection(LazyCollectionOption.FALSE)
-    @JsonManagedReference
-    private List<Appointment> appointments;
+    // @OneToMany
+    // @ToString.Exclude
+    // @LazyCollection(LazyCollectionOption.FALSE)
+    // @JsonManagedReference
+    // private List<Appointment> appointments;
 
     @Override
     public boolean equals(Object o) {

@@ -73,11 +73,11 @@ public class Client {
     @JsonManagedReference
     private List<Bill> bills;
 
-    @OneToMany
-    @ToString.Exclude
-    @LazyCollection(LazyCollectionOption.FALSE)
-    @JsonManagedReference
-    private List<Appointment> appointments;
+    // @OneToMany
+    // @ToString.Exclude
+    // @LazyCollection(LazyCollectionOption.FALSE)
+    // @JsonManagedReference
+    // private List<Appointment> appointments;
 
     @OneToMany
     @ToString.Exclude

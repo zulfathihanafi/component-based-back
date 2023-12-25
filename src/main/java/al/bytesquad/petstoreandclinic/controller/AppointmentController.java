@@ -1,5 +1,6 @@
 package al.bytesquad.petstoreandclinic.controller;
 
+import al.bytesquad.petstoreandclinic.entity.Appointment;
 import al.bytesquad.petstoreandclinic.payload.entityDTO.AppointmentDTO;
 import al.bytesquad.petstoreandclinic.service.AppointmentService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -22,11 +23,25 @@ public class AppointmentController {
         this.appointmentService = appointmentService;
     }
 
-    //get all appointments
-    @GetMapping
-    @CrossOrigin(origins = "http://localhost:3000")
-    public List<AppointmentDTO> getAll(@RequestParam(required = false) String keyword, Principal principal) {
-        return appointmentService.getAll(keyword, principal);
+    //get all appointments based on petId
+    @GetMapping("pet/{petId}")
+    public ResponseEntity<List<Appointment>> getAppointmentsByPetId(@PathVariable Long petId) {
+        List<Appointment> appointments = appointmentService.getAppointmentsByPetId(petId);
+        return ResponseEntity.ok(appointments);
+    }
+
+    //get all appointments based on doctor Id
+    @GetMapping("doctor/{doctorId}")
+    public ResponseEntity<List<Appointment>> getAppointmentsByDoctorId(@PathVariable Long doctorId) {
+        List<Appointment> appointments = appointmentService.getAppointmentsByDoctorId(doctorId);
+        return ResponseEntity.ok(appointments);
+    }
+
+    //get all appointments based on client Id
+    @GetMapping("client/{clientId}")
+    public ResponseEntity<List<Appointment>> getAppointmentsByClientId(@PathVariable Long clientId) {
+        List<Appointment> appointments = appointmentService.getAppointmentsByClientId(clientId);
+        return ResponseEntity.ok(appointments);
     }
 
     // book appointment

@@ -54,11 +54,11 @@ public class Pet {
     @Column(name = "enabled")
     private boolean enabled = true;
 
-    @OneToMany
-    @ToString.Exclude
-    @LazyCollection(LazyCollectionOption.FALSE)
-    @JsonManagedReference
-    private List<Appointment> appointments;
+    // @OneToMany
+    // @ToString.Exclude
+    // @LazyCollection(LazyCollectionOption.FALSE)
+    // @JsonManagedReference
+    // private List<Appointment> appointments;
 
     @Override
     public boolean equals(Object o) {

@@ -76,7 +76,95 @@ public class AppointmentService {
         AppointmentSaveDTO appointmentSaveDTO = objectMapper.readValue(jsonString, AppointmentSaveDTO.class);
 
         // Fetch the shop of the selected doctor
-        Doctor doctor = doctorRepository.findDoctorById(appointmentSaveDTO.getDoctorId())
+        Doctor doctor = doctorRepository.findById(appointmentSaveDTO.getDoctorId())
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", "id", appointmentSaveDTO.getDoctorId()));
+
+        Shop shop = doctor.getShop();
+
+        // Parse the start and finish times from the provided strings
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Kuala_Lumpur")); // Set the timezone to Malaysia
+        Date requestedStartTime = dateFormat.parse(appointmentSaveDTO.getStartTime());
+
+        // Calculate the requestedEndTime as 1 hour after the requestedStartTime
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(requestedStartTime);
+        calendar.add(Calendar.MINUTE, 59);
+        Date computedFinishTime = calendar.getTime();
+
+        // Check if the shop is open during the requested appointment time
+        LocalTime startTime = shop.getStartWorkingTime().minusMinutes(1);
+        LocalTime endTime = shop.getEndWorkingTime();
+        LocalTime breakStartTime = LocalTime.of(13, 0); // 1:00 PM
+        LocalTime breakEndTime = LocalTime.of(13, 59); // 2:00 PM
+
+        // Convert the requested time to LocalTime
+        LocalTime requestedStartTimeLocal = requestedStartTime.toInstant().atZone(ZoneId.of("Asia/Kuala_Lumpur"))
+                .toLocalTime();
+        LocalTime requestedEndTimeLocal = computedFinishTime.toInstant().atZone(ZoneId.of("Asia/Kuala_Lumpur"))
+                .toLocalTime();
+
+        // Check if the appointment falls within the shop's working hours
+        if (requestedStartTimeLocal.isAfter(startTime) && requestedEndTimeLocal.isBefore(endTime)) {
+            // Check if the appointment falls within the break time (strictly not allowed)
+            if ((requestedStartTimeLocal.isBefore(breakStartTime) && requestedEndTimeLocal.isBefore(breakStartTime))
+                    || (requestedStartTimeLocal.isAfter(breakEndTime) && requestedEndTimeLocal.isAfter(breakEndTime))) {
+                // Check for overlapping appointments during non-break hours
+                List<Appointment> overlappingAppointments = appointmentRepository
+                        .findByDoctorIdAndStartTimeBetweenAndFinishTimeBetween(
+                                doctor.getId(), requestedStartTime, computedFinishTime, requestedStartTime,
+                                computedFinishTime);
+
+                if (!overlappingAppointments.isEmpty()) {
+                    throw new RuntimeException("Appointment overlaps with existing appointments");
+                } else {
+                    // The appointment is valid, proceed with saving it
+                    Appointment appointment = modelMapper.map(appointmentSaveDTO, Appointment.class);
+                    appointment.setStartTime(requestedStartTime);
+                    appointment.setFinishTime(computedFinishTime);
+                    Client client = clientRepository.findById(appointmentSaveDTO.getClientId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Client", "id",
+                                    appointmentSaveDTO.getClientId()));
+                    Pet pet = petRepository.findById(appointmentSaveDTO.getPetId())
+                            .orElseThrow(
+                                    () -> new ResourceNotFoundException("Pet", "id", appointmentSaveDTO.getPetId()));
+                    PetServices petService = serviceRepository.findById(appointmentSaveDTO.getServiceId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Service", "id",
+                                    appointmentSaveDTO.getServiceId()));
+
+                    // Check if the requested petId belongs to the client
+                    if (!pet.getClient().getId().equals(client.getId())) {
+                        throw new RuntimeException("You can only update appointments for your own pets.");
+                    } else {
+                        appointment.setClient(client);
+                        appointment.setDoctor(doctor);
+                        appointment.setPet(pet);
+                        appointment.setPetServices(petService);
+
+                        // Save the appointment
+                        Appointment newAppointment = appointmentRepository.save(appointment);
+
+                        return modelMapper.map(newAppointment, AppointmentDTO.class);
+                    }
+
+                }
+
+            } else {
+                throw new RuntimeException("Appointment cannot be booked during the break time");
+            }
+
+        } else {
+            throw new RuntimeException("Appointment time is not valid");
+        }
+    }
+
+    public AppointmentDTO update(String jsonString, long id) throws JsonProcessingException, ParseException {
+        AppointmentSaveDTO appointmentSaveDTO = objectMapper.readValue(jsonString, AppointmentSaveDTO.class);
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment", "id", id));
+
+        // Fetch the shop of the selected doctor
+        Doctor doctor = doctorRepository.findById(appointmentSaveDTO.getDoctorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor", "id", appointmentSaveDTO.getDoctorId()));
         Shop shop = doctor.getShop();
 
@@ -98,8 +186,10 @@ public class AppointmentService {
         LocalTime breakEndTime = LocalTime.of(13, 59); // 2:00 PM
 
         // Convert the requested time to LocalTime
-        LocalTime requestedStartTimeLocal = requestedStartTime.toInstant().atZone(ZoneId.systemDefault()).toLocalTime();
-        LocalTime requestedEndTimeLocal = computedFinishTime.toInstant().atZone(ZoneId.systemDefault()).toLocalTime();
+        LocalTime requestedStartTimeLocal = requestedStartTime.toInstant().atZone(ZoneId.of("Asia/Kuala_Lumpur"))
+                .toLocalTime();
+        LocalTime requestedEndTimeLocal = computedFinishTime.toInstant().atZone(ZoneId.of("Asia/Kuala_Lumpur"))
+                .toLocalTime();
 
         // Check if the appointment falls within the shop's working hours
         if (requestedStartTimeLocal.isAfter(startTime) && requestedEndTimeLocal.isBefore(endTime)) {
@@ -115,115 +205,42 @@ public class AppointmentService {
                 if (!overlappingAppointments.isEmpty()) {
                     throw new RuntimeException("Appointment overlaps with existing appointments");
                 } else {
-                    // The appointment is valid, proceed with saving it
-                    Appointment appointment = modelMapper.map(appointmentSaveDTO, Appointment.class);
+                    // Update the appointment fields
                     appointment.setStartTime(requestedStartTime);
                     appointment.setFinishTime(computedFinishTime);
-                    Client client = clientRepository.findClientById(appointmentSaveDTO.getClientId())
+
+                    // Retrieve the client, doctor, pet, and service entities
+                    Client client = clientRepository.findById(appointmentSaveDTO.getClientId())
                             .orElseThrow(() -> new ResourceNotFoundException("Client", "id",
                                     appointmentSaveDTO.getClientId()));
-                    Doctor doctor1 = doctorRepository.findDoctorById(appointmentSaveDTO.getDoctorId())
-                            .orElseThrow(() -> new ResourceNotFoundException("Doctor", "id",
-                                    appointmentSaveDTO.getDoctorId()));
                     Pet pet = petRepository.findById(appointmentSaveDTO.getPetId())
                             .orElseThrow(
                                     () -> new ResourceNotFoundException("Pet", "id", appointmentSaveDTO.getPetId()));
                     PetServices petService = serviceRepository.findById(appointmentSaveDTO.getServiceId())
                             .orElseThrow(() -> new ResourceNotFoundException("Service", "id",
                                     appointmentSaveDTO.getServiceId()));
-                    appointment.setClient(client);
-                    appointment.setDoctor(doctor1);
-                    appointment.setPet(pet);
-                    appointment.setPetServices(petService);
 
-                    // Save the appointment
-                    Appointment newAppointment = appointmentRepository.save(appointment);
+                    // Check if the requested petId belongs to the client
+                    if (!pet.getClient().getId().equals(client.getId())) {
+                        throw new RuntimeException("You can only update appointments for your own pets.");
+                    } else {
+                        // Update the appointment with the new relationships
+                        appointment.setClient(client);
+                        appointment.setDoctor(doctor);
+                        appointment.setPet(pet);
+                        appointment.setPetServices(petService);
 
-                    return modelMapper.map(newAppointment, AppointmentDTO.class);
-                }
+                        // Save the updated appointment
+                        Appointment updatedAppointment = appointmentRepository.save(appointment);
 
-            } else {
-                throw new RuntimeException("Appointment cannot be booked during the break time");
-            }
+                        // Return the updated appointment DTO
+                        return modelMapper.map(updatedAppointment, AppointmentDTO.class);
+                    }
 
-        } else {
-            throw new RuntimeException("Appointment time is not valid");
-        }
-    }
-
-    public AppointmentDTO update(String jsonString, long id) throws JsonProcessingException, ParseException {
-        AppointmentSaveDTO appointmentSaveDTO = objectMapper.readValue(jsonString, AppointmentSaveDTO.class);
-        Appointment appointment = appointmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment", "id", id));
-
-        // Fetch the shop of the selected doctor
-        Doctor doctor = doctorRepository.findDoctorById(appointmentSaveDTO.getDoctorId())
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor", "id", appointmentSaveDTO.getDoctorId()));
-        Shop shop = doctor.getShop();
-
-        // Parse the start and finish times from the provided strings
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-        dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Kuala_Lumpur")); // Set the timezone to Malaysia
-        Date requestedStartTime = dateFormat.parse(appointmentSaveDTO.getStartTime());
-
-        // Calculate the requestedEndTime as 1 hour after the requestedStartTime
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(requestedStartTime);
-        calendar.add(Calendar.MINUTE, 59);
-        Date computedFinishTime = calendar.getTime();
-
-        // Check if the shop is open during the requested appointment time
-        LocalTime startTime = shop.getStartWorkingTime().minusMinutes(1);
-        LocalTime endTime = shop.getEndWorkingTime();
-        LocalTime breakStartTime = LocalTime.of(13, 0); // 1:00 PM
-        LocalTime breakEndTime = LocalTime.of(14, 0); // 2:00 PM
-
-        // Convert the requested time to LocalTime
-        LocalTime requestedStartTimeLocal = requestedStartTime.toInstant().atZone(ZoneId.systemDefault()).toLocalTime();
-        LocalTime requestedEndTimeLocal = computedFinishTime.toInstant().atZone(ZoneId.systemDefault()).toLocalTime();
-
-        // Check if the appointment falls within the shop's working hours
-        if (requestedStartTimeLocal.isAfter(startTime) && requestedEndTimeLocal.isBefore(endTime)) {
-            // Check if the appointment falls within the break time (strictly not allowed)
-            if ((requestedStartTimeLocal.isBefore(breakStartTime) && requestedEndTimeLocal.isBefore(breakStartTime))
-                    || (requestedStartTimeLocal.isAfter(breakEndTime) && requestedEndTimeLocal.isAfter(breakEndTime))) {
-                // Check for overlapping appointments during non-break hours
-                List<Appointment> overlappingAppointments = appointmentRepository
-                        .findByDoctorIdAndStartTimeBetweenAndFinishTimeBetween(
-                                doctor.getId(), requestedStartTime, computedFinishTime, requestedStartTime,
-                                computedFinishTime);
-
-                if (!overlappingAppointments.isEmpty()) {
-                    throw new RuntimeException("Appointment overlaps with existing appointments");
-                } else {
-                    // Update
-                    appointment.setStartTime(requestedStartTime);
-                    appointment.setFinishTime(computedFinishTime);
-                    Client client = clientRepository.findClientById(appointmentSaveDTO.getClientId())
-                            .orElseThrow(() -> new ResourceNotFoundException("Client", "id",
-                                    appointmentSaveDTO.getClientId()));
-                    Doctor doctor1 = doctorRepository.findDoctorById(appointmentSaveDTO.getDoctorId())
-                            .orElseThrow(() -> new ResourceNotFoundException("Doctor", "id",
-                                    appointmentSaveDTO.getDoctorId()));
-                    Pet pet = petRepository.findById(appointmentSaveDTO.getPetId())
-                            .orElseThrow(
-                                    () -> new ResourceNotFoundException("Pet", "id", appointmentSaveDTO.getPetId()));
-                    PetServices petService = serviceRepository.findById(appointmentSaveDTO.getServiceId())
-                            .orElseThrow(() -> new ResourceNotFoundException("Service", "id",
-                                    appointmentSaveDTO.getServiceId()));
-                    appointment.setClient(client);
-                    appointment.setDoctor(doctor1);
-                    appointment.setPet(pet);
-                    appointment.setPetServices(petService);
-                    // Save the updated appointment
-                    Appointment updatedAppointment = appointmentRepository.save(appointment);
-
-                    return modelMapper.map(updatedAppointment, AppointmentDTO.class);
                 }
             } else {
                 throw new RuntimeException("Appointment cannot be booked during the break time");
             }
-
         } else {
             throw new RuntimeException("Appointment time is not valid");
         }
@@ -244,99 +261,19 @@ public class AppointmentService {
         appointmentRepository.deleteById(id);
     }
 
-    public List<AppointmentDTO> getAll(String keyword, Principal principal) {
-        if (keyword == null)
-            return appointmentRepository.findAll().stream()
-                    .map(appointment -> modelMapper.map(appointment, AppointmentDTO.class))
-                    .collect(Collectors.toList());
-
-        List<String> keyValues = List.of(keyword.split(","));
-        HashMap<String, String> pairs = new HashMap<>();
-        for (String s : keyValues) {
-            String[] strings = s.split(":");
-            pairs.put(strings[0], strings[1]);
-        }
-
-        List<Appointment> appointments = appointmentRepository.findAll((root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
-            for (String key : pairs.keySet()) {
-                Path<Object> fieldPath = root.get(key);
-                predicates.add(criteriaBuilder.equal(fieldPath, pairs.get(key)));
-            }
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        });
-
-        /*
-         * List<Appointment> filteredList;
-         * 
-         * Authentication authentication =
-         * SecurityContextHolder.getContext().getAuthentication();
-         * String loggedInEmail = principal.getName();
-         * User user = userRepository.findByEmail(loggedInEmail);
-         * List<String> userRoles = user.getRoles().stream()
-         * .map(Role::getName).toList();
-         * 
-         * String selectedRole = null;
-         * 
-         * if (authentication != null &&
-         * userRoles.contains(authentication.getAuthorities().iterator().next().
-         * getAuthority())) {
-         * selectedRole =
-         * authentication.getAuthorities().iterator().next().getAuthority();
-         * // Assuming the authority is in the format "ROLE_{ROLE_NAME}"
-         * selectedRole = selectedRole.substring("ROLE_".length()).toLowerCase();
-         * }
-         * 
-         * if ("client".equals(selectedRole)) {
-         * filteredList = appointments.stream()
-         * .filter(appointment ->
-         * appointment.getClient().equals(clientRepository.findByEmail(loggedInEmail)))
-         * .collect(Collectors.toList());
-         * } else if ("receptionist".equals(selectedRole)) {
-         * filteredList = null;
-         * } else if ("doctor".equals(selectedRole)) {
-         * filteredList = appointments.stream()
-         * .filter(appointment ->
-         * appointment.getDoctor().equals(doctorRepository.findByEmail(loggedInEmail)))
-         * .collect(Collectors.toList());
-         * } else if ("manager".equals(selectedRole)) {
-         * filteredList = appointments.stream()
-         * .filter(appointment ->
-         * appointment.getDoctor().getShop().equals(managerRepository.findByEmail(
-         * loggedInEmail).getShop()))
-         * .collect(Collectors.toList());
-         * } else {
-         * filteredList = appointments;
-         * }
-         * 
-         * if (filteredList == null)
-         * return null;
-         */
-        return appointments.stream().map(appointment -> modelMapper.map(appointment, AppointmentDTO.class))
-                .collect(Collectors.toList());
+    public List<Appointment> getAppointmentsByPetId(Long petId) {
+        List<Appointment> appointments = appointmentRepository.findByPetId(petId);
+        return appointments;
     }
 
-    // private AppointmentDTO mapAppointmentToDTO(Appointment appointment) {
-    // AppointmentDTO dto = modelMapper.map(appointment, AppointmentDTO.class);
+    public List<Appointment> getAppointmentsByDoctorId(Long doctorId) {
+        List<Appointment> appointments = appointmentRepository.findByDoctorId(doctorId);
+        return appointments;
+    }
 
-    // // Parse the datetime(6) values into Date objects
-    // SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd
-    // HH:mm:ss.SSS");
-
-    // try {
-    // Date startTime = dateFormat.parse(appointment.getStartTime().toString()); //
-    // Access the attribute directly
-    // Date finishTime = dateFormat.parse(appointment.getFinishTime().toString());
-    // // Access the attribute directly
-
-    // dto.setStartTime(startTime);
-    // dto.setFinishTime(finishTime);
-    // } catch (ParseException e) {
-    // // Handle parsing error
-    // e.printStackTrace();
-    // }
-
-    // return dto;
-    // }
+    public List<Appointment> getAppointmentsByClientId(Long clientId) {
+        List<Appointment> appointments = appointmentRepository.findByClientId(clientId);
+        return appointments;
+    }
 
 }

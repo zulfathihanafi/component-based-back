@@ -57,7 +57,7 @@ public class ForumService {
     public Forum create(@RequestBody String forumString) throws JsonProcessingException{
         ForumDTO forumDTO = objectMapper.readValue(forumString, ForumDTO.class);
         Forum forum = modelMapper.map(forumDTO, Forum.class);
-        // forum.setUser(userRepository.findUserById(forumDTO.getUserId()).orElseThrow(()-> new ResourceNotFoundException(forumString, forumString, 0)));
+        forum.setUser(userRepository.findUserById(forumDTO.getUserId()).orElseThrow(()-> new ResourceNotFoundException(forumString, forumString, 0)));
         System.out.println("Within service"+ forum);
         return forumRepository.save(forum);
     }

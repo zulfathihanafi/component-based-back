@@ -41,10 +41,10 @@ public class Forum {
     @Column(name = "post")
     private String post;
 
-    // @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    // @JoinColumn(name = "user_id", nullable = false)
-    // @JsonIgnore
-    // private User user;
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
+    private User user;
 
     // @OneToMany(mappedBy = "forum",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     // private List<Comment> comments = new ArrayList<>();

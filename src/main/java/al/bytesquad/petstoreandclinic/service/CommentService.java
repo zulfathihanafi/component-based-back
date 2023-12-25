@@ -60,12 +60,12 @@ public class CommentService {
         Comment comment = modelMapper.map(commentDTO, Comment.class);
         System.out.println("DTO : "+commentDTO);
         
-        // User user = userRepository.findUserById(commentDTO.getUser_id()).orElseThrow(()-> new ResourceNotFoundException(forumString, forumString, 0));
-        // System.out.println("User"+ user);
+        User user = userRepository.findUserById(commentDTO.getUser_id()).orElseThrow(()-> new ResourceNotFoundException(forumString, forumString, 0));
+        System.out.println("User"+ user);
         Forum forum = forumRepository.findById(commentDTO.getForum_id()).orElseThrow(()-> new ResourceNotFoundException(forumString, forumString, 0));
         System.out.println("Forum : "+forum);
         
-        // comment.setUser(user);
+        comment.setUser(user);
         comment.setForum(forum);
 
         return commentRepository.save(comment);

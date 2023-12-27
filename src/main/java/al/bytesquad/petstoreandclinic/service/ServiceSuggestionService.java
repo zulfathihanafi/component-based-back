@@ -24,7 +24,7 @@ public class ServiceSuggestionService {
 
         // Find the latest appointment
         Appointment latestAppointment = appointments.stream()
-                .max(Comparator.comparing(Appointment::getFinishTime)) // Replace 'getFinishTime' with your date/time field
+                .max(Comparator.comparing(Appointment::getFinishTime)) 
                 .orElse(null);
 
         if (latestAppointment != null) {
@@ -32,19 +32,19 @@ public class ServiceSuggestionService {
             if (lastService != null) {
                 Long lastServiceId = lastService.getId();
 
-                // Suggest the next service based on the last service ID
+                // Suggest the next service based on the latest appointment service record
                 switch (lastServiceId.intValue()) {
                     case 1:
-                        return "Suggested Service: Vaccination";
+                        return "Service Suggestion: Vaccination";
                     case 2:
-                        return "Suggested Service: Deworming";
+                        return "Service Suggestion: Deworming";
                     case 3:
-                        return "Suggested Service: Neutering/Spaying";
+                        return "Service Suggestion: Neutering/Spaying";
                     default:
-                        return "Suggested Service: General Health Checkup";
+                        return "Service Suggestion: General Health Checkup";
                 }
             }
         }
-        return "Suggested Service: General Health Checkup"; // Default suggestion
+        return "Service Suggestion: General Health Checkup"; // Default suggestion
     }
 }

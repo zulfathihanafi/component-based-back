@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 
 @RestController
-@RequestMapping("/service-suggestion")
+@RequestMapping("/service")
 public class ServiceSuggestionController {
 
     private final ServiceSuggestionService serviceSuggestionService;

@@ -198,9 +198,9 @@ public class AppointmentService {
                     || (requestedStartTimeLocal.isAfter(breakEndTime) && requestedEndTimeLocal.isAfter(breakEndTime))) {
                 // Check for overlapping appointments during non-break hours
                 List<Appointment> overlappingAppointments = appointmentRepository
-                        .findByDoctorIdAndStartTimeBetweenAndFinishTimeBetween(
+                        .findByDoctorIdAndStartTimeBetweenAndFinishTimeBetweenAndIdNot(
                                 doctor.getId(), requestedStartTime, computedFinishTime, requestedStartTime,
-                                computedFinishTime);
+                                computedFinishTime, id);
 
                 if (!overlappingAppointments.isEmpty()) {
                     throw new RuntimeException("Appointment overlaps with existing appointments");

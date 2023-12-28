@@ -11,6 +11,8 @@ import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -72,14 +74,28 @@ public class AppointmentService {
         this.productRepository = productRepository;
     }
 
-    public AppointmentDTO book(String jsonString, Principal principal) throws JsonProcessingException, ParseException {
+    public ResponseEntity<?> book(String jsonString, Principal principal) throws JsonProcessingException, ParseException {
         AppointmentSaveDTO appointmentSaveDTO = objectMapper.readValue(jsonString, AppointmentSaveDTO.class);
 
         // Fetch the shop of the selected doctor
         Doctor doctor = doctorRepository.findById(appointmentSaveDTO.getDoctorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor", "id", appointmentSaveDTO.getDoctorId()));
 
+        // Check if the doctor is enabled
+        if (!doctor.isEnabled()) {
+            // Return a custom error response with a 400 Bad Request status and an error message
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Doctor is not enabled for appointments");
+        }
+
         Shop shop = doctor.getShop();
+
+        // Check if the doctor is enabled
+        if (!shop.isEnabled()) {
+            // Return a custom error response with a 400 Bad Request status and an error message
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Clinic is not enabled for appointments");
+        }
 
         // Parse the start and finish times from the provided strings
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
@@ -116,7 +132,10 @@ public class AppointmentService {
                                 computedFinishTime);
 
                 if (!overlappingAppointments.isEmpty()) {
-                    throw new RuntimeException("Appointment overlaps with existing appointments");
+                    // Return a custom error response with a 400 Bad Request status and an error
+                    // message
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Appointment overlaps with existing appointments");
                 } else {
                     // The appointment is valid, proceed with saving it
                     Appointment appointment = modelMapper.map(appointmentSaveDTO, Appointment.class);
@@ -134,7 +153,10 @@ public class AppointmentService {
 
                     // Check if the requested petId belongs to the client
                     if (!pet.getClient().getId().equals(client.getId())) {
-                        throw new RuntimeException("You can only update appointments for your own pets.");
+                        // Return a custom error response with a 400 Bad Request status and an error
+                        // message
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .body("You can only create appointments for your own pets.");
                     } else {
                         appointment.setClient(client);
                         appointment.setDoctor(doctor);
@@ -144,21 +166,25 @@ public class AppointmentService {
                         // Save the appointment
                         Appointment newAppointment = appointmentRepository.save(appointment);
 
-                        return modelMapper.map(newAppointment, AppointmentDTO.class);
+                        // Return the appointment DTO with a 200 OK status
+                        return ResponseEntity.ok(modelMapper.map(newAppointment, AppointmentDTO.class));
                     }
-
                 }
-
             } else {
-                throw new RuntimeException("Appointment cannot be booked during the break time");
+                // Return a custom error response with a 400 Bad Request status and an error
+                // message
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Appointment cannot be booked during the break time 1pm-2pm (13:00-14:00)");
             }
-
         } else {
-            throw new RuntimeException("Appointment time is not valid");
+            // Return a custom error response with a 400 Bad Request status and an error
+            // message
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Appointment time is not valid (Out of Operation Hours)");
         }
     }
 
-    public AppointmentDTO update(String jsonString, long id) throws JsonProcessingException, ParseException {
+    public ResponseEntity<?> update(String jsonString, long id) throws JsonProcessingException, ParseException {
         AppointmentSaveDTO appointmentSaveDTO = objectMapper.readValue(jsonString, AppointmentSaveDTO.class);
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment", "id", id));
@@ -166,7 +192,22 @@ public class AppointmentService {
         // Fetch the shop of the selected doctor
         Doctor doctor = doctorRepository.findById(appointmentSaveDTO.getDoctorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor", "id", appointmentSaveDTO.getDoctorId()));
+
+         // Check if the doctor is enabled
+        if (!doctor.isEnabled()) {
+            // Return a custom error response with a 400 Bad Request status and an error message
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Doctor is not enabled for appointments");
+        }
+
         Shop shop = doctor.getShop();
+
+        // Check if the doctor is enabled
+        if (!shop.isEnabled()) {
+            // Return a custom error response with a 400 Bad Request status and an error message
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Clinic is not enabled for appointments");
+        }
 
         // Parse the start and finish times from the provided strings
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
@@ -203,7 +244,9 @@ public class AppointmentService {
                                 computedFinishTime, id);
 
                 if (!overlappingAppointments.isEmpty()) {
-                    throw new RuntimeException("Appointment overlaps with existing appointments");
+                    // Return a custom error response with a 400 Bad Request status and an error message
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Appointment overlaps with existing appointments");
                 } else {
                     // Update the appointment fields
                     appointment.setStartTime(requestedStartTime);
@@ -222,7 +265,9 @@ public class AppointmentService {
 
                     // Check if the requested petId belongs to the client
                     if (!pet.getClient().getId().equals(client.getId())) {
-                        throw new RuntimeException("You can only update appointments for your own pets.");
+                        // Return a custom error response with a 400 Bad Request status and an error message
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .body("You can only update appointments for your own pets.");
                     } else {
                         // Update the appointment with the new relationships
                         appointment.setClient(client);
@@ -233,16 +278,19 @@ public class AppointmentService {
                         // Save the updated appointment
                         Appointment updatedAppointment = appointmentRepository.save(appointment);
 
-                        // Return the updated appointment DTO
-                        return modelMapper.map(updatedAppointment, AppointmentDTO.class);
+                        // Return the updated appointment DTO with a 200 OK status
+                        return ResponseEntity.ok(modelMapper.map(updatedAppointment, AppointmentDTO.class));
                     }
-
                 }
             } else {
-                throw new RuntimeException("Appointment cannot be booked during the break time");
+                // Return a custom error response with a 400 Bad Request status and an error message
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Appointment cannot be booked during the break time 1pm-2pm (13:00-14:00)");
             }
         } else {
-            throw new RuntimeException("Appointment time is not valid");
+            // Return a custom error response with a 400 Bad Request status and an error message
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Appointment time is not valid (Out of Operation Hours)");
         }
     }
 

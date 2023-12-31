@@ -329,6 +329,11 @@ public class AppointmentService {
         appointmentRepository.deleteById(id);
     }
 
+    // get by appointment id
+    public Appointment getAppointmentById(Long id){
+        return appointmentRepository.findById(id).orElse(null);
+    }
+
     public List<Appointment> getAppointmentsByPetId(Long petId) {
         List<Appointment> appointments = appointmentRepository.findByPetId(petId);
         return appointments;
@@ -398,6 +403,7 @@ public class AppointmentService {
         }
     }
 
+    // Calculate available time slots
     private List<String> calculateAvailableTimeSlots(Date startDate, LocalTime startTime, LocalTime endTime, List<Appointment> bookedAppointments) {
         List<String> availableTimeSlots = new ArrayList<>();
 

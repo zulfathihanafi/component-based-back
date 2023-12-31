@@ -153,6 +153,11 @@ public class DoctorService {
         return doctors.stream().map(doctor -> modelMapper.map(doctor, DoctorDTO.class)).collect(Collectors.toList());
     }
 
+    // get by doctor id
+    public Doctor getDoctorById(Long id){
+        return doctorRepository.findById(id).orElse(null);
+    }
+
     public DoctorDTO getById(long id) {
         Doctor doctor = doctorRepository.findDoctorById(id).orElseThrow(() -> new ResourceNotFoundException("Doctor", "id", id));
         return modelMapper.map(doctor, DoctorDTO.class);

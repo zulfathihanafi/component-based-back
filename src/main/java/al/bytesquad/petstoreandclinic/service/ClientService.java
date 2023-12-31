@@ -85,6 +85,11 @@ public class ClientService {
         return modelMapper.map(newClient, ClientDTO.class);
     }
 
+    // get by client id
+    public Client getClientById(Long id){
+        return clientRepository.findById(id).orElse(null);
+    }
+
     public List<ClientDTO> getAll(String keyword) {
         if (keyword == null)
             return clientRepository.findAllByEnabled(true).stream().map(client -> modelMapper.map(client, ClientDTO.class)).collect(Collectors.toList());

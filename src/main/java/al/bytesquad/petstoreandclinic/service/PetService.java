@@ -60,6 +60,11 @@ public class PetService {
         });
     }
 
+    // get by pet id
+    public Pet getPetById(Long id){
+        return petRepository.findById(id).orElse(null);
+    }
+
     public PetDTO create(String jsonString) throws JsonProcessingException {
         PetSaveDTO petSaveDTO = objectMapper.readValue(jsonString, PetSaveDTO.class);
         Pet pet = modelMapper.map(petSaveDTO, Pet.class);

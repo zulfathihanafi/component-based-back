@@ -101,4 +101,10 @@ public class AuthService {
             return ResponseEntity.ok(new StatusResponse(null, 404, null, "Logout!", null, null));
         return ResponseEntity.ok(new StatusResponse(session.getSessionId(), 200, session.getUser().getSecondId(), "Success!", null, session.getRole()));
     }
+
+    public ResponseEntity<?> signOut(){
+        ResponseCookie cookie = provider.getCleanJwtCookie();
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString())
+            .body("You've been signed out!");
+    }
 }

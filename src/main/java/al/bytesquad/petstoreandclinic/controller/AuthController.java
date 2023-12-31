@@ -5,6 +5,7 @@ import al.bytesquad.petstoreandclinic.payload.LoginDTO;
 import al.bytesquad.petstoreandclinic.payload.StatusResponse;
 import al.bytesquad.petstoreandclinic.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,5 +37,8 @@ public class AuthController {
     // public ResponseEntity<JWTAuthResponse> refreshToken() {
     //     return authService.refreshToken();
     // }
-
+ @PostMapping("/signout")
+  public ResponseEntity<?> logoutUser() {
+    return authService.signOut();
+  }
 }

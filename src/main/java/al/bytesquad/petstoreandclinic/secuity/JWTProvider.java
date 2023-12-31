@@ -93,4 +93,8 @@ private static final Logger logger = LoggerFactory.getLogger(JWTProvider.class);
         return null;
         }
     }
+    public ResponseCookie getCleanJwtCookie() {
+      ResponseCookie cookie = ResponseCookie.from(jwtCookie, null).path("/").build();
+      return cookie;
+    }
 }

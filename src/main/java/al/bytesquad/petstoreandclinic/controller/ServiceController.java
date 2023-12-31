@@ -64,4 +64,12 @@ public class ServiceController {
             return new ResponseEntity<>("Error deleting the record: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @PostMapping("/suggestion")
+    @CrossOrigin(origins = "http://localhost:3000")
+    public String suggestService(@RequestBody String text) {
+        long value = Long.parseLong(text);
+        String suggestedService = serviceService.getServiceSuggestion(value);
+        return suggestedService;
+    }
 }

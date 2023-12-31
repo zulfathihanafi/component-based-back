@@ -1,8 +1,10 @@
 package al.bytesquad.petstoreandclinic.service;
 
+import al.bytesquad.petstoreandclinic.entity.Appointment;
 import al.bytesquad.petstoreandclinic.entity.PetServices;
 import al.bytesquad.petstoreandclinic.payload.entityDTO.ServiceDTO;
 import al.bytesquad.petstoreandclinic.payload.saveDTO.ServiceSaveDTO;
+import al.bytesquad.petstoreandclinic.repository.AppointmentRepository;
 import al.bytesquad.petstoreandclinic.repository.ServiceRepository;
 import al.bytesquad.petstoreandclinic.service.exception.ResourceNotFoundException;
 import jakarta.persistence.criteria.Path;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,12 +28,14 @@ import java.util.stream.Collectors;
 public class ServiceService {
 
     private final ServiceRepository serviceRepository;
+    private final AppointmentRepository appointmentRepository;
     private final ModelMapper modelMapper;
     private final ObjectMapper objectMapper;
 
     @Autowired
-    public ServiceService(ServiceRepository serviceRepository, ModelMapper modelMapper, ObjectMapper objectMapper) {
+    public ServiceService(ServiceRepository serviceRepository, AppointmentRepository appointmentRepository, ModelMapper modelMapper, ObjectMapper objectMapper) {
         this.serviceRepository = serviceRepository;
+        this.appointmentRepository = appointmentRepository;
         this.modelMapper = modelMapper;
         this.objectMapper = objectMapper;
 
@@ -87,5 +92,34 @@ public class ServiceService {
 
     public void delete(long id){
         serviceRepository.deleteById(id);
+    }
+
+    public String getServiceSuggestion(Long petId) {
+        List<Appointment> appointments = appointmentRepository.findByPetId(petId);
+
+        // Find the latest appointment
+        Appointment latestAppointment = appointments.stream()
+                .max(Comparator.comparing(Appointment::getFinishTime)) 
+                .orElse(null);
+
+        if (latestAppointment != null) {
+            PetServices lastService = latestAppointment.getPetServices();
+            if (lastService != null) {
+                Long lastServiceId = lastService.getId();
+
+                // Suggest the next service based on the latest appointment service record
+                switch (lastServiceId.intValue()) {
+                    case 1:
+                        return "Service Suggestion: Vaccination";
+                    case 2:
+                        return "Service Suggestion: Deworming";
+                    case 3:
+                        return "Service Suggestion: Neutering/Spaying";
+                    default:
+                        return "Service Suggestion: General Health Checkup";
+                }
+            }
+        }
+        return "Service Suggestion: General Health Checkup"; // Default suggestion
     }
 }

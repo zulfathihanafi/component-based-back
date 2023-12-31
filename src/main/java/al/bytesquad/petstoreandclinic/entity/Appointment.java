@@ -44,6 +44,12 @@ public class Appointment {
     private Doctor doctor;
 
     @ManyToOne
+    @JoinColumn(name = "shop_id")
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @JsonBackReference
+    private Shop shop;
+
+    @ManyToOne
     @JoinColumn(name = "service_id")
     @LazyCollection(LazyCollectionOption.FALSE)
     @JsonBackReference

@@ -16,17 +16,23 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
@@ -34,6 +40,7 @@ import java.util.stream.Collectors;
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
+    private final ShopRepository shopRepository;
     private final ModelMapper modelMapper;
     private final ClientRepository clientRepository;
     private final ServiceRepository serviceRepository;
@@ -53,7 +60,7 @@ public class AppointmentService {
             ManagerRepository managerRepository, ObjectMapper objectMapper,
             PetRepository petRepository,
             ProductRepository productRepository,
-            ServiceRepository serviceRepository) {
+            ServiceRepository serviceRepository, ShopRepository shopRepository) {
         this.appointmentRepository = appointmentRepository;
         this.modelMapper = modelMapper;
         this.clientRepository = clientRepository;
@@ -62,6 +69,7 @@ public class AppointmentService {
         this.doctorRepository = doctorRepository;
         this.managerRepository = managerRepository;
         this.serviceRepository = serviceRepository;
+        this.shopRepository = shopRepository;
         this.objectMapper = objectMapper;
 
         modelMapper.addMappings(new PropertyMap<Appointment, AppointmentDTO>() {
@@ -74,7 +82,8 @@ public class AppointmentService {
         this.productRepository = productRepository;
     }
 
-    public ResponseEntity<?> book(String jsonString, Principal principal) throws JsonProcessingException, ParseException {
+    public ResponseEntity<?> book(String jsonString, Principal principal)
+            throws JsonProcessingException, ParseException {
         AppointmentSaveDTO appointmentSaveDTO = objectMapper.readValue(jsonString, AppointmentSaveDTO.class);
 
         // Fetch the shop of the selected doctor
@@ -83,16 +92,18 @@ public class AppointmentService {
 
         // Check if the doctor is enabled
         if (!doctor.isEnabled()) {
-            // Return a custom error response with a 400 Bad Request status and an error message
+            // Return a custom error response with a 400 Bad Request status and an error
+            // message
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Doctor is not enabled for appointments");
         }
 
         Shop shop = doctor.getShop();
 
-        // Check if the doctor is enabled
+        // Check if the shop is enabled
         if (!shop.isEnabled()) {
-            // Return a custom error response with a 400 Bad Request status and an error message
+            // Return a custom error response with a 400 Bad Request status and an error
+            // message
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Clinic is not enabled for appointments");
         }
@@ -162,6 +173,7 @@ public class AppointmentService {
                         appointment.setDoctor(doctor);
                         appointment.setPet(pet);
                         appointment.setPetServices(petService);
+                        appointment.setShop(shop);
 
                         // Save the appointment
                         Appointment newAppointment = appointmentRepository.save(appointment);
@@ -193,9 +205,10 @@ public class AppointmentService {
         Doctor doctor = doctorRepository.findById(appointmentSaveDTO.getDoctorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor", "id", appointmentSaveDTO.getDoctorId()));
 
-         // Check if the doctor is enabled
+        // Check if the doctor is enabled
         if (!doctor.isEnabled()) {
-            // Return a custom error response with a 400 Bad Request status and an error message
+            // Return a custom error response with a 400 Bad Request status and an error
+            // message
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Doctor is not enabled for appointments");
         }
@@ -204,7 +217,8 @@ public class AppointmentService {
 
         // Check if the doctor is enabled
         if (!shop.isEnabled()) {
-            // Return a custom error response with a 400 Bad Request status and an error message
+            // Return a custom error response with a 400 Bad Request status and an error
+            // message
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Clinic is not enabled for appointments");
         }
@@ -244,7 +258,8 @@ public class AppointmentService {
                                 computedFinishTime, id);
 
                 if (!overlappingAppointments.isEmpty()) {
-                    // Return a custom error response with a 400 Bad Request status and an error message
+                    // Return a custom error response with a 400 Bad Request status and an error
+                    // message
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                             .body("Appointment overlaps with existing appointments");
                 } else {
@@ -265,15 +280,18 @@ public class AppointmentService {
 
                     // Check if the requested petId belongs to the client
                     if (!pet.getClient().getId().equals(client.getId())) {
-                        // Return a custom error response with a 400 Bad Request status and an error message
+                        // Return a custom error response with a 400 Bad Request status and an error
+                        // message
                         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                                 .body("You can only update appointments for your own pets.");
                     } else {
                         // Update the appointment with the new relationships
                         appointment.setClient(client);
                         appointment.setDoctor(doctor);
+                        appointment.setShop(shop);
                         appointment.setPet(pet);
                         appointment.setPetServices(petService);
+                        appointment.setShop(shop);
 
                         // Save the updated appointment
                         Appointment updatedAppointment = appointmentRepository.save(appointment);
@@ -283,12 +301,14 @@ public class AppointmentService {
                     }
                 }
             } else {
-                // Return a custom error response with a 400 Bad Request status and an error message
+                // Return a custom error response with a 400 Bad Request status and an error
+                // message
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("Appointment cannot be booked during the break time 1pm-2pm (13:00-14:00)");
             }
         } else {
-            // Return a custom error response with a 400 Bad Request status and an error message
+            // Return a custom error response with a 400 Bad Request status and an error
+            // message
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Appointment time is not valid (Out of Operation Hours)");
         }
@@ -322,6 +342,124 @@ public class AppointmentService {
     public List<Appointment> getAppointmentsByClientId(Long clientId) {
         List<Appointment> appointments = appointmentRepository.findByClientId(clientId);
         return appointments;
+    }
+
+    // retrive all the appointments based on shopId and date
+    public ResponseEntity<?> getAppointmentsByShopIdAndDate(Long shopId, LocalDate date)
+            throws JsonProcessingException, ParseException {
+        // Convert the LocalDate to Date with the specified timezone (e.g.,
+        // Asia/Kuala_Lumpur)
+        Date startDate = Date.from(date.atStartOfDay(ZoneId.of("Asia/Kuala_Lumpur")).toInstant());
+        Date endDate = Date.from(date.atStartOfDay(ZoneId.of("Asia/Kuala_Lumpur")).plusDays(1).toInstant());
+
+        // Fetch the shop by its ID to check if it is enabled
+        Shop shop = shopRepository.findById(shopId)
+                .orElseThrow(() -> new ResourceNotFoundException("Shop", "id", shopId));
+
+        // Check if the shop is enabled
+        if (!shop.isEnabled()) {
+            // Return a custom error response with a 400 Bad Request status and an error
+            // message
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Clinic is not enabled for appointments");
+        } else {
+            // Use a repository method to fetch appointments based on the shopId and date
+            List<Appointment> appointments = appointmentRepository.findByShopIdAndStartTimeBetween(shopId, startDate,
+                    endDate);
+
+            return ResponseEntity.ok(appointments);
+        }
+    }
+
+    // get all available appointments slots based on shop Id and date
+    public ResponseEntity<?> getAvailableTimeSlots(Long shopId, LocalDate date)
+            throws JsonProcessingException, ParseException {
+        Date startDate = Date.from(date.atStartOfDay(ZoneId.of("Asia/Kuala_Lumpur")).toInstant());
+        Date endDate = Date.from(date.atStartOfDay(ZoneId.of("Asia/Kuala_Lumpur")).plusDays(1).toInstant());
+
+        Shop shop = shopRepository.findById(shopId)
+                .orElseThrow(() -> new ResourceNotFoundException("Shop", "id", shopId));
+
+        if (!shop.isEnabled()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Clinic is not enabled for appointments");
+        } else {
+            List<Appointment> bookedAppointments = appointmentRepository.findByShopIdAndStartTimeBetween(
+                    shopId, startDate, endDate);
+
+            // Fetch shop's working hours
+            LocalTime startTime = shop.getStartWorkingTime();
+            LocalTime endTime = shop.getEndWorkingTime();
+
+            // Calculate available time slots
+            List<String> availableTimeSlots = calculateAvailableTimeSlots(startDate, startTime, endTime, bookedAppointments);
+
+            return ResponseEntity.ok(availableTimeSlots);
+        }
+    }
+
+    private List<String> calculateAvailableTimeSlots(Date startDate, LocalTime startTime, LocalTime endTime, List<Appointment> bookedAppointments) {
+        List<String> availableTimeSlots = new ArrayList<>();
+
+        // Define time slot duration (59 mins)
+        int slotDurationMinutes = 59;
+
+        // Create a calendar instance to iterate over time slots
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeZone(TimeZone.getTimeZone("Asia/Kuala_Lumpur"));
+        calendar.setTime(startDate);
+
+        // Initialize calendar time to the start time
+        calendar.set(Calendar.HOUR_OF_DAY, startTime.getHour());
+        calendar.set(Calendar.MINUTE, startTime.getMinute());
+
+        // End time as calendar
+        Calendar endCalendar = Calendar.getInstance();
+        endCalendar.setTimeZone(TimeZone.getTimeZone("Asia/Kuala_Lumpur"));
+        endCalendar.setTime(startDate);
+        endCalendar.set(Calendar.HOUR_OF_DAY, endTime.getHour());
+        endCalendar.set(Calendar.MINUTE, endTime.getMinute());
+
+        while (calendar.before(endCalendar)) {
+            // Check if the current time slot is within the shop's working hours
+            LocalTime slotLocalTime = LocalTime.of(calendar.get(Calendar.HOUR_OF_DAY),
+                    calendar.get(Calendar.MINUTE));
+
+            if (slotLocalTime.isAfter(startTime.minusMinutes(1)) &&
+                    slotLocalTime.isBefore(endTime)) {
+
+                // Check if the current time slot is within the break time
+                LocalTime breakStartTime = LocalTime.of(13, 0); // 1:00 PM
+                LocalTime breakEndTime = LocalTime.of(14, 0); // 1:59 PM
+
+                if (!(slotLocalTime.equals(breakStartTime) || (slotLocalTime.isAfter(breakStartTime) && slotLocalTime.isBefore(breakEndTime)))) {
+                    // Check if the current time slot is available (not in booked appointments)
+                    Date slotStartTime = calendar.getTime();
+                    calendar.add(Calendar.MINUTE, slotDurationMinutes);
+                    Date slotEndTime = calendar.getTime();
+
+                    boolean isSlotAvailable = true;
+                    for (Appointment appointment : bookedAppointments) {
+                        if (slotStartTime.equals(appointment.getStartTime())) {
+                            // There is an overlap with a booked appointment
+                            isSlotAvailable = false;
+                            break;
+                        }
+                    }
+
+                    if (isSlotAvailable) {
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
+                        dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Kuala_Lumpur")); // Set the timezone to Malaysia
+                        String startTimeStr = dateFormat.format(slotStartTime);
+                        String finishTimeStr = dateFormat.format(slotEndTime);
+                        availableTimeSlots.add("startTime: " + startTimeStr + ", finishTime: " + finishTimeStr);
+                    }
+                }
+            }
+            calendar.add(Calendar.MINUTE, 1); // Move to the next time slot
+        }
+
+        return availableTimeSlots;
     }
 
 }

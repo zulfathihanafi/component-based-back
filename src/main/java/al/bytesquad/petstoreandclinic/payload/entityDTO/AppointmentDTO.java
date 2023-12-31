@@ -8,6 +8,7 @@ import al.bytesquad.petstoreandclinic.entity.Client;
 import al.bytesquad.petstoreandclinic.entity.Doctor;
 import al.bytesquad.petstoreandclinic.entity.Pet;
 import al.bytesquad.petstoreandclinic.entity.PetServices;
+import al.bytesquad.petstoreandclinic.entity.Shop;
 import lombok.Data;
 
 @Data
@@ -22,4 +23,6 @@ public class AppointmentDTO {
 
     @JsonFormat(pattern = "EEE MMM dd HH:mm:ss z yyyy", timezone = "Asia/Kuala_Lumpur")
     private Date finishTime;
+
+    private Shop shop;
 }

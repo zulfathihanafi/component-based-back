@@ -47,6 +47,7 @@ public class ServiceService {
         });
     }
 
+    // create service
     public ServiceDTO create(String jsonString) throws JsonProcessingException {
         ServiceSaveDTO serviceSaveDTO = objectMapper.readValue(jsonString, ServiceSaveDTO.class);
 
@@ -54,6 +55,7 @@ public class ServiceService {
         return modelMapper.map(serviceRepository.save(petService), ServiceDTO.class);
     }
 
+    // get all service
     public List<ServiceDTO> getAll(String keyword, Principal principal) {
         if (keyword == null)
             return serviceRepository.findAll().stream()
@@ -80,6 +82,7 @@ public class ServiceService {
                 .collect(Collectors.toList());
     }
 
+    // update service
     public ServiceDTO update(String jsonString, long id) throws JsonProcessingException {
         ServiceSaveDTO serviceSaveDTO = objectMapper.readValue(jsonString, ServiceSaveDTO.class);
        PetServices petService = serviceRepository.findById(id)
@@ -90,10 +93,12 @@ public class ServiceService {
         return modelMapper.map(serviceRepository.save(petService), ServiceDTO.class);
     }
 
+    // delete service
     public void delete(long id){
         serviceRepository.deleteById(id);
     }
 
+    // get subsequent service suggestion based on pet Id
     public String getServiceSuggestion(Long petId) {
         List<Appointment> appointments = appointmentRepository.findByPetId(petId);
 

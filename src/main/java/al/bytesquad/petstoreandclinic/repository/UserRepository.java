@@ -18,4 +18,6 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     List<User> findAllByEnabled(Boolean enabled);
 
     Optional<User> findUserById(long id);
+    
+    boolean existsByEmail(String email);
 }

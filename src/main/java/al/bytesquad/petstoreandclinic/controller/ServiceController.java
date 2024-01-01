@@ -70,7 +70,7 @@ public class ServiceController {
         boolean hasAccess = isPrivilegedUser;
 
         if (!hasAccess) {
-            return new ResponseEntity<>("Please login!.", HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>("Access denied. Insufficient privileges.", HttpStatus.FORBIDDEN);
         }
 
         try {

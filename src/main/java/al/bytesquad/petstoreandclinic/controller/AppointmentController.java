@@ -60,7 +60,7 @@ public class AppointmentController {
         boolean hasAccess = isPrivilegedUser;
 
         if (!hasAccess) {
-            return new ResponseEntity<>("Please login!.", HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>("Access denied. Insufficient privileges.", HttpStatus.FORBIDDEN);
         }
 
         try {
@@ -112,10 +112,10 @@ public class AppointmentController {
 
         // Check if the user are correct
         Collection<? extends GrantedAuthority> roles = SecurityContextHolder.getContext().getAuthentication()
-                .getAuthorities();               
+                .getAuthorities();
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        if (!(doctor.getEmail().equals(currentUsername) 
+        if (!(doctor.getEmail().equals(currentUsername)
                 || roles.stream().anyMatch(role -> "ROLE_ADMIN".equals(role.getAuthority()))
                 || roles.stream().anyMatch(role -> "ROLE_MANAGER".equals(role.getAuthority()))
                 || roles.stream().anyMatch(role -> "ROLE_RECEPTIONIST".equals(role.getAuthority())))) {
@@ -173,7 +173,7 @@ public class AppointmentController {
         boolean hasAccess = isPrivilegedUser;
 
         if (!hasAccess) {
-            return new ResponseEntity<>("Please login!.", HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>("Access denied. Insufficient privileges.", HttpStatus.FORBIDDEN);
         }
 
         try {
@@ -204,8 +204,9 @@ public class AppointmentController {
         boolean hasAccess = isPrivilegedUser;
 
         if (!hasAccess) {
-            return new ResponseEntity<>("Please login!.", HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>("Access denied. Insufficient privileges.", HttpStatus.FORBIDDEN);
         }
+        
         try {
             return appointmentService.getAvailableTimeSlots(shopId, date);
         } catch (JsonProcessingException | ParseException ex) {

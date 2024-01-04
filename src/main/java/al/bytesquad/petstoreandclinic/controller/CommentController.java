@@ -19,11 +19,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
 import java.security.Principal;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -74,8 +77,28 @@ public class CommentController {
         }
     // update
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> updateTutorial(@PathVariable("id") long id, @RequestBody String commentString)
-            throws JsonProcessingException {
+    public ResponseEntity<?> updateTutorial(@PathVariable("id") long id, @RequestBody String commentString) throws JsonProcessingException {
+
+        // Retrieve the comment by ID
+        Comment existingComment = commentService.getCommentById(id);
+
+        // Check if the comment exists
+        if (existingComment == null) {
+            return new ResponseEntity<>("Comment not found.", HttpStatus.NOT_FOUND);
+        }
+
+        // Check if the user are correct : Manager | Own Comment
+        Collection<? extends GrantedAuthority> roles = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        
+        if (!(existingComment.getUser().getEmail().equals(currentUsername) || roles.stream().anyMatch(role -> "ROLE_MANAGER".equals(role.getAuthority())))) {
+            return new ResponseEntity<>("Access denied. Insufficient privileges.", HttpStatus.FORBIDDEN);
+        }
+        // if (!) {
+        //     return new ResponseEntity<>("Access denied. Insufficient privileges.", HttpStatus.FORBIDDEN);
+        // }
+
+        
 
         try {
             Comment updatedComment = commentService.update(commentString, id);
@@ -89,6 +112,24 @@ public class CommentController {
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> delete(@PathVariable(name = "id") long id) {
+
+        // Retrieve the comment by ID
+        Comment existingComment = commentService.getCommentById(id);
+
+        // Check if the comment exists
+        
+        if (existingComment == null) {
+            return new ResponseEntity<>("Comment not found.", HttpStatus.NOT_FOUND);
+        }
+
+        // Check if the user are correct : Manager | Own Comment
+        Collection<? extends GrantedAuthority> roles = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        
+        if (!(existingComment.getUser().getEmail().equals(currentUsername) || roles.stream().anyMatch(role -> "ROLE_MANAGER".equals(role.getAuthority())))) {
+            return new ResponseEntity<>("Access denied. Insufficient privileges.", HttpStatus.FORBIDDEN);
+        }
+
         try {
             commentService.delete(id);
             // If deletion is successful, return a success response with HTTP status 200

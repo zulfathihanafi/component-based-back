@@ -8,7 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -19,17 +21,31 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JWTAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JWTAuthenticationFilter authenticationFilter;
     private final JWTProvider provider;
     private final MyUserDetailsService userDetailsService;
 
     @Autowired
-    public SecurityConfig(JWTAuthenticationEntryPoint jwtAuthenticationEntryPoint, JWTProvider provider, MyUserDetailsService userDetailsService) {
+    public SecurityConfig(JWTAuthenticationEntryPoint jwtAuthenticationEntryPoint, JWTProvider provider,
+            MyUserDetailsService userDetailsService, JWTAuthenticationFilter authenticationFilter) {
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
         this.provider = provider;
         this.userDetailsService = userDetailsService;
+        this.authenticationFilter = authenticationFilter;
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+
+        return authProvider;
     }
 
     @Bean
@@ -38,37 +54,28 @@ public class SecurityConfig {
     }
 
     @Bean
-    protected SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.cors().and()
-                .csrf().disable()
-                .exceptionHandling()
-                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                .and()
-                .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                .authorizeRequests()
-                .requestMatchers("/**").permitAll()
-                .requestMatchers("/v2/api-docs/**").permitAll()
-                .requestMatchers("/swagger-ui/**").permitAll()
-                .requestMatchers("/swagger-resources/**").permitAll()
-                .requestMatchers("/swagger-ui.html/**").permitAll()
-                .requestMatchers("/webjars/**").permitAll()
-                .anyRequest().authenticated()
-                .and()
-                .formLogin()
-                .usernameParameter("email")
-                .passwordParameter("password")
-                .defaultSuccessUrl("/", true)
-                .and()
-                .logout()
-                .logoutSuccessUrl("/login");
-        httpSecurity.addFilterBefore(new JWTAuthenticationFilter(provider, userDetailsService), UsernamePasswordAuthenticationFilter.class);
-        return httpSecurity.build();
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.csrf(csrf -> csrf.disable())
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/api/test/**").permitAll()
+                        .anyRequest().authenticated());
+
+        // fix H2 database console: Refused to display ' in a frame because it set
+        // 'X-Frame-Options' to 'deny'
+        http.headers(headers -> headers.frameOptions(frameOption -> frameOption.sameOrigin()));
+
+        http.authenticationProvider(authenticationProvider());
+
+        http.addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
     }
 
     @Bean
-    AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 

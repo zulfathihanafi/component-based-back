@@ -5,6 +5,7 @@ import al.bytesquad.petstoreandclinic.payload.LoginDTO;
 import al.bytesquad.petstoreandclinic.payload.StatusResponse;
 import al.bytesquad.petstoreandclinic.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +22,7 @@ public class AuthController {
 
     @PostMapping("/login")
     @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<StatusResponse> authenticateUser(@RequestBody String loginDTO) throws Exception {
+    public ResponseEntity<?> authenticateUser(@RequestBody String loginDTO) throws Exception {
         return authService.authenticate(loginDTO);
     }
 
@@ -31,10 +32,13 @@ public class AuthController {
         return authService.auth(sessionId);
     }
 
-    @GetMapping("/refreshToken")
-    @CrossOrigin(origins = "http://localhost:3000")
-    public ResponseEntity<JWTAuthResponse> refreshToken() {
-        return authService.refreshToken();
-    }
-
+    // @GetMapping("/refreshToken")
+    // @CrossOrigin(origins = "http://localhost:3000")
+    // public ResponseEntity<JWTAuthResponse> refreshToken() {
+    //     return authService.refreshToken();
+    // }
+ @PostMapping("/signout")
+  public ResponseEntity<?> logoutUser() {
+    return authService.signOut();
+  }
 }

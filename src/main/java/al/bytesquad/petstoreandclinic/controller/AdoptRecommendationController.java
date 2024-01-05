@@ -38,8 +38,14 @@ public class AdoptRecommendationController {
     }
 
     @GetMapping("/randomPetBySpecies")
-    public List<AdoptablePet> get(@RequestParam(required = false) String keyword, Principal principal) {
-        return adoptablePetService.getList();
+    public ResponseEntity<AdoptablePet> getRandomPets(@RequestParam(required = true) String species) {
+        AdoptablePet randomPet = adoptablePetService.recommendRandomPetBySpecies(species);
+
+        if (randomPet != null) {
+            return ResponseEntity.ok(randomPet);
+        } 
+            return ResponseEntity.notFound().build();
+        
     }
 
     @GetMapping("/pets")
@@ -50,40 +56,40 @@ public class AdoptRecommendationController {
         return ResponseEntity.ok(pets);
     }
 
-    @GetMapping("/suggestedPets")
-    public ResponseEntity<List<AdoptablePet>> suggestPetsBasedOnSpeciesAndBusyState(
-            @RequestParam(required = true) String species,
-            @RequestParam(required = true) boolean busy
-    ) {
-        // Your logic to suggest pets based on both species and the busy state
-        // You can call your service method with both parameters here
+    // @GetMapping("/suggestedPets")
+    // public ResponseEntity<List<AdoptablePet>> suggestPetsBasedOnSpeciesAndBusyState(
+    //         @RequestParam(required = true) String species,
+    //         @RequestParam(required = true) boolean busy
+    // ) {
+    //     // Your logic to suggest pets based on both species and the busy state
+    //     // You can call your service method with both parameters here
 
-        List<AdoptablePet> suggestedPets = adoptablePetService.suggestPetsByBehavior(species, busy);
+    //     List<AdoptablePet> suggestedPets = adoptablePetService.suggestPetsByBehavior(species, busy);
 
-        if (!suggestedPets.isEmpty()) {
-            return ResponseEntity.ok(suggestedPets);
-        }
+    //     if (!suggestedPets.isEmpty()) {
+    //         return ResponseEntity.ok(suggestedPets);
+    //     }
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-    }  
+    //     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+    // }  
 
-    @GetMapping("/suggestedPetsByGender")
-    public ResponseEntity<List<AdoptablePet>> suggestPetsBasedOnGender(
-            @RequestParam(required = true) String species,
-            @RequestParam(required = false) String gender,
-            @RequestParam(required = true) boolean busy
-    ) {
-        List<AdoptablePet> suggestedPets = adoptablePetService.suggestPetsByGender(species, gender, busy);
+    // @GetMapping("/suggestedPetsByGender")
+    // public ResponseEntity<List<AdoptablePet>> suggestPetsBasedOnGender(
+    //         @RequestParam(required = true) String species,
+    //         @RequestParam(required = false) String gender,
+    //         @RequestParam(required = true) boolean busy
+    // ) {
+    //     List<AdoptablePet> suggestedPets = adoptablePetService.suggestPetsByGender(species, gender, busy);
 
-        if (!suggestedPets.isEmpty()) {
-            return ResponseEntity.ok(suggestedPets);
-        }
+    //     if (!suggestedPets.isEmpty()) {
+    //         return ResponseEntity.ok(suggestedPets);
+    //     }
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-    }
+    //     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+    // }
 
-     @GetMapping("/suggestedPetsByBreed")
-    public ResponseEntity<List<AdoptablePet>> suggestPetsBasedOnBreed(
+     @GetMapping("/suggestion")
+    public ResponseEntity<?> suggestPetsBasedOnBreed(
             @RequestParam(required = true) String species,
             @RequestParam(required = false) String gender,
             @RequestParam(required = false) String breed,
@@ -94,8 +100,8 @@ public class AdoptRecommendationController {
         if (!suggestedPets.isEmpty()) {
             return ResponseEntity.ok(suggestedPets);
         }
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        String message = "The species " + species + " and breed " + breed + " is not available";
+        return new ResponseEntity<>(message, HttpStatus.NOT_FOUND);
     }
 
 }

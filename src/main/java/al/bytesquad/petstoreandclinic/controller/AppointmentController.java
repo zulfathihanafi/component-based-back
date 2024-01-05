@@ -4,12 +4,15 @@ import al.bytesquad.petstoreandclinic.entity.Appointment;
 import al.bytesquad.petstoreandclinic.entity.Client;
 import al.bytesquad.petstoreandclinic.entity.Doctor;
 import al.bytesquad.petstoreandclinic.entity.Pet;
+import al.bytesquad.petstoreandclinic.payload.entityDTO.AppointmentDTO;
 import al.bytesquad.petstoreandclinic.service.AppointmentService;
 import al.bytesquad.petstoreandclinic.service.ClientService;
 import al.bytesquad.petstoreandclinic.service.DoctorService;
 import al.bytesquad.petstoreandclinic.service.PetService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -24,6 +27,7 @@ import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/appointments")
@@ -50,21 +54,34 @@ public class AppointmentController {
         Collection<? extends GrantedAuthority> roles = SecurityContextHolder.getContext().getAuthentication()
                 .getAuthorities();
 
-        // Check user role
-        boolean isPrivilegedUser = roles.stream().anyMatch(role -> "ROLE_CLIENT".equals(role.getAuthority()) ||
-                "ROLE_ADMIN".equals(role.getAuthority()) ||
-                "ROLE_MANAGER".equals(role.getAuthority()) ||
-                "ROLE_RECEPTIONIST".equals(role.getAuthority()));
-
-        // Condition to determine access
-        boolean hasAccess = isPrivilegedUser;
-
-        if (!hasAccess) {
-            return new ResponseEntity<>("Access denied. Insufficient privileges.", HttpStatus.FORBIDDEN);
-        }
-
         try {
-            return appointmentService.book(appointmentSaveDTO, principal);
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, Object> data = objectMapper.readValue(appointmentSaveDTO, new TypeReference<Map<String, Object>>() {});
+
+            // Now you can access the clientId from the map
+            Object clientIdObj = data.get("clientId");
+
+            Long clientId = Long.parseLong(clientIdObj.toString());
+
+            // Extract the username (email) of the logged-in user
+            String currentUsername = principal.getName();
+
+            // Get the Client object from the appointmentDTO
+            Client client = clientService.getClientById(clientId);
+
+            // Check if the email of the client matches the email of the logged-in user
+            String clientEmail = client.getEmail();
+            if (clientEmail.equals(currentUsername)||roles.stream().anyMatch(role -> "ROLE_ADMIN".equals(role.getAuthority()))
+                || roles.stream().anyMatch(role -> "ROLE_MANAGER".equals(role.getAuthority()))
+                || roles.stream().anyMatch(role -> "ROLE_RECEPTIONIST".equals(role.getAuthority()))) {
+                // Email matches, proceed to book the appointment
+                return appointmentService.book(appointmentSaveDTO, principal);
+            } else {
+                // Email doesn't match, return an unauthorized response
+                return new ResponseEntity<>("Access denied. Insufficient privileges.",
+                        HttpStatus.FORBIDDEN);
+            }
         } catch (JsonProcessingException | ParseException ex) {
             // Handle the exception or return an appropriate response
             String errorMessage = "An error occurred while booking the appointment.";
@@ -156,8 +173,8 @@ public class AppointmentController {
     }
 
     // get all appointments based on shop Id and date
-    @GetMapping("shop/{shopId}/{date}")
-    public ResponseEntity<?> getAppointmentsByShopIdAndDate(@PathVariable Long shopId,
+    @GetMapping("shop/{shopId}/doctor/{doctorId}/{date}")
+    public ResponseEntity<?> getAppointmentsByShopIdAndDate(@PathVariable Long shopId, @PathVariable Long doctorId,
             @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
 
         Collection<? extends GrantedAuthority> roles = SecurityContextHolder.getContext().getAuthentication()
@@ -177,7 +194,7 @@ public class AppointmentController {
         }
 
         try {
-            return appointmentService.getAppointmentsByShopIdAndDate(shopId, date);
+            return appointmentService.getAppointmentsByShopIdAndDate(shopId, doctorId, date);
         } catch (JsonProcessingException | ParseException ex) {
             String errorMessage = "An error occurred while fetching the appointment.";
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage);
@@ -185,9 +202,10 @@ public class AppointmentController {
     }
 
     // get all available appointment slots based on shop Id and date
-    @GetMapping("available-slots/shop/{shopId}/{date}")
+    @GetMapping("available-slots/shop/{shopId}/doctor/{doctorId}/{date}")
     public ResponseEntity<?> getAvailableTimeSlotsByShopIdAndDate(
             @PathVariable Long shopId,
+            @PathVariable Long doctorId,
             @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
 
         Collection<? extends GrantedAuthority> roles = SecurityContextHolder.getContext().getAuthentication()
@@ -206,9 +224,9 @@ public class AppointmentController {
         if (!hasAccess) {
             return new ResponseEntity<>("Access denied. Insufficient privileges.", HttpStatus.FORBIDDEN);
         }
-        
+
         try {
-            return appointmentService.getAvailableTimeSlots(shopId, date);
+            return appointmentService.getAvailableTimeSlots(shopId, doctorId, date);
         } catch (JsonProcessingException | ParseException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ex.getMessage()); // Return the custom error message
@@ -282,6 +300,11 @@ public class AppointmentController {
             return new ResponseEntity<>("Error deleting the record: " + e.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private AppointmentDTO convertJsonToAppointmentDTO(String json) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper.readValue(json, AppointmentDTO.class);
     }
 
 }

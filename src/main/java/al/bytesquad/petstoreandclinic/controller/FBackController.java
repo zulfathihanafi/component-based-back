@@ -52,6 +52,12 @@ public class FBackController {
     return new ResponseEntity<>(fback, HttpStatus.OK);
     }
 
+    @GetMapping("/sentiment/month/{month}")
+    public ResponseEntity<String> getOverallSentimentByMonth(@PathVariable String month) {
+    String overallSentiment = fbackService.getOverallSentimentByMonth(month);
+    return new ResponseEntity<>(overallSentiment, HttpStatus.OK);
+}
+
 //     @GetMapping("/by-month-and-shop")
 //     public ResponseEntity<List<FBack>> getByMonthAndShop(
 //     @RequestParam String month,
@@ -61,7 +67,7 @@ public class FBackController {
 //     return new ResponseEntity<>(fback, HttpStatus.OK);
 // }
 
-    //create fback
+
     @PostMapping("/create")
     public ResponseEntity<FBack> createPost(@RequestBody String post) throws JsonProcessingException {
         FBack createdPost = fbackService.create(post);

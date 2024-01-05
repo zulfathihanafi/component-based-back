@@ -10,5 +10,7 @@ public class FBackDTO {
     private String title;
     private String message;
     // private String sentiment;
+    private String titleSentiment;  // Add this line
+    private String messageSentiment;  // Add this line
 
 }

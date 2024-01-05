@@ -15,8 +15,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
+//sentiment-nlp
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 @SpringBootApplication
 public class PetStoreAndClinicApplication implements CommandLineRunner {
@@ -43,6 +47,14 @@ public class PetStoreAndClinicApplication implements CommandLineRunner {
     public ModelMapper modelMapper() {
         return new ModelMapper();
     }
+
+    @Bean
+    public StanfordCoreNLP stanfordCoreNLP() {
+        Properties properties = new Properties();
+        properties.setProperty("annotators", "tokenize, ssplit, pos, lemma, parse, sentiment");
+        return new StanfordCoreNLP(properties);
+    }
+
 
     @Override
     @Transactional

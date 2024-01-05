@@ -52,8 +52,29 @@ public class FBack {
     @Column(name = "message")
     private String message;
 
+    @Column(name = "title_sentiment")
+    private String titleSentiment;  // Add this line
+
+    @Column(name = "message_sentiment")
+    private String messageSentiment;  // Add this line
+
     // @Column(name = "sentiment")
     // private String sentiment;
 
+    // Add getters and setters for titleSentiment and messageSentiment
+    public String getTitleSentiment() {
+        return titleSentiment;
+    }
 
-}  
+    public void setTitleSentiment(String titleSentiment) {
+        this.titleSentiment = titleSentiment;
+    }
+
+    public String getMessageSentiment() {
+        return messageSentiment;
+    }
+
+    public void setMessageSentiment(String messageSentiment) {
+        this.messageSentiment = messageSentiment;
+    }
+}

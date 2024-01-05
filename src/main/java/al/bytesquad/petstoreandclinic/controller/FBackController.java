@@ -27,6 +27,8 @@ import javax.validation.Valid;
 
 import java.security.Principal;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 
 @RestController
@@ -46,6 +48,13 @@ public class FBackController {
         return fbackService.getList();
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<FBack>> getAllFeedback() {
+    List<FBack> allFeedback = fbackService.getAllFeedback();
+    return new ResponseEntity<>(allFeedback, HttpStatus.OK);
+    }
+
+
     @GetMapping("/by-month/{month}")
     public ResponseEntity<List<FBack>> getByMonth(@PathVariable String month) {
     List<FBack> fback = fbackService.getByMonth(month);
@@ -54,9 +63,25 @@ public class FBackController {
 
     @GetMapping("/sentiment/month/{month}")
     public ResponseEntity<String> getOverallSentimentByMonth(@PathVariable String month) {
-    String overallSentiment = fbackService.getOverallSentimentByMonth(month);
-    return new ResponseEntity<>(overallSentiment, HttpStatus.OK);
-}
+        String overallSentiment = fbackService.getOverallSentimentByMonth(month);
+        String result = "Feedback Analysis of \"" + month + "\": " + overallSentiment;
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @GetMapping("/sentiment/all-months")
+    public ResponseEntity<String> getOverallSentimentForAllMonths() {
+        StringBuilder result = new StringBuilder();
+
+        // Add logic to get overall sentiment for each month
+        List<String> allMonths = fbackService.getAllMonths();
+
+        for (String month : allMonths) {
+            String overallSentiment = fbackService.getOverallSentimentByMonth(month);
+            result.append(month).append(": ").append(overallSentiment).append("\n");
+        }
+
+        return new ResponseEntity<>(result.toString(), HttpStatus.OK);
+    }
 
 //     @GetMapping("/by-month-and-shop")
 //     public ResponseEntity<List<FBack>> getByMonthAndShop(

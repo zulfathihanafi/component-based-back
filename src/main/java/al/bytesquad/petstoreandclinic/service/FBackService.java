@@ -44,6 +44,10 @@ public class FBackService {
         return fbackRepository.findAll();
     }
 
+    public List<FBack> getAllFeedback() {
+        return fbackRepository.findAll();
+    }    
+
     public FBack getFBackById(Long id) {
         return fbackRepository.findById(id).orElse(null);
     }
@@ -51,6 +55,12 @@ public class FBackService {
     public List<FBack> getByMonth(String month) {
         return fbackRepository.findByMonth(month);
     }
+
+    // getAllMonths to compare sentiment among all months
+    public List<String> getAllMonths() {
+    return fbackRepository.findAllMonths();  // Implement the method in FBackRepository
+    }
+    
 
     public FBack create(String fbackString) throws JsonProcessingException {
         FBackDTO fbackDTO = objectMapper.readValue(fbackString, FBackDTO.class);

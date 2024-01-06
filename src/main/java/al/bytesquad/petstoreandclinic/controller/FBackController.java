@@ -106,7 +106,7 @@ public class FBackController {
 
         // Check if the comment exists
         if (existingFBack == null) {
-            return new ResponseEntity<>("Comment not found.", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("Feedback not found.", HttpStatus.NOT_FOUND);
         }
 
         // Check if the user are correct : Manager | Own Comment
@@ -133,7 +133,7 @@ public class FBackController {
 
         // Check if the comment exists
         if (existingFback == null) {
-            return new ResponseEntity<>("Comment not found.", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("Feedback not found.", HttpStatus.NOT_FOUND);
         }
 
         // Check if the user are correct : Manager | Own Comment

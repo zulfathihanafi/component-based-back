@@ -82,14 +82,30 @@ public class FBackService {
 
     public FBack update(String fbackString, long id) throws JsonProcessingException {
         FBackDTO fbackDTO = objectMapper.readValue(fbackString, FBackDTO.class);
-        FBack fback = fbackRepository.findById(id)
+        FBack existingFback = fbackRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(fbackString, fbackString, 0));
-
-        fback.setTitle(fbackDTO.getTitle());
-        fback.setMessage(fbackDTO.getMessage());
-        fback.setMonth(fbackDTO.getMonth());
-
-        return fbackRepository.save(fback);
+    
+        existingFback.setTitle(fbackDTO.getTitle());
+        existingFback.setMessage(fbackDTO.getMessage());
+        existingFback.setMonth(fbackDTO.getMonth());
+    
+        // Perform sentiment analysis on updated title and message
+        SentimentAnalysisResult titleSentiment = analyzeSentiment(existingFback.getTitle());
+        SentimentAnalysisResult messageSentiment = analyzeSentiment(existingFback.getMessage());
+    
+        // Set the updated sentiment values
+        existingFback.setTitleSentiment(titleSentiment.getSentiment());
+        existingFback.setMessageSentiment(messageSentiment.getSentiment());
+    
+        // Save the updated feedback to the repository
+        FBack updatedFback = fbackRepository.save(existingFback);
+    
+        // Print the updated sentiment
+        String updatedSentiment = "Update sentiment is Title: " + titleSentiment.getSentiment() +
+                ", Message: " + messageSentiment.getSentiment();
+        System.out.println(updatedSentiment);
+    
+        return updatedFback;
     }
 
     public void delete(long id) {
@@ -168,6 +184,7 @@ public class FBackService {
         }
     }
 
+    //inner class representing sentiment analysis result
     class SentimentAnalysisResult {
         private String sentiment;
 

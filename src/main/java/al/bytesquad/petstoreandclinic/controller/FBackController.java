@@ -13,9 +13,12 @@ import al.bytesquad.petstoreandclinic.service.AdminService;
 import al.bytesquad.petstoreandclinic.service.ForumService;
 import al.bytesquad.petstoreandclinic.service.FBackService;
 import al.bytesquad.petstoreandclinic.service.ShopService;
-
+import io.jsonwebtoken.lang.Collections;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+
+// import org.apache.logging.log4j.util.PropertySource.Comparator;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +30,9 @@ import javax.validation.Valid;
 
 import java.security.Principal;
 import java.util.Collection;
+import java.util.Comparator;
+
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
@@ -71,16 +77,33 @@ public class FBackController {
     @GetMapping("/sentiment/all-months")
     public ResponseEntity<String> getOverallSentimentForAllMonths() {
         StringBuilder result = new StringBuilder();
-
+    
         // Add logic to get overall sentiment for each month
         List<String> allMonths = fbackService.getAllMonths();
+    
+        // Sort the months chronologically
+        allMonths.sort(java.util.Comparator.comparingInt(this::getMonthNumber));
 
+        // Add the title
+        result.append("Overall Sentiment Analysis\n");
+    
         for (String month : allMonths) {
             String overallSentiment = fbackService.getOverallSentimentByMonth(month);
-            result.append(month).append(": ").append(overallSentiment).append("\n");
+            result.append("\"").append(month).append("\": ").append(overallSentiment).append("\n");
         }
 
         return new ResponseEntity<>(result.toString(), HttpStatus.OK);
+    }
+    
+    // Helper method to get the month number
+    private int getMonthNumber(String month) {
+        String[] monthNames = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+        for (int i = 0; i < monthNames.length; i++) {
+            if (monthNames[i].equalsIgnoreCase(month)) {
+                return i;
+            }
+        }
+        return -1; // Return -1 for unknown month (should not happen in a valid scenario)
     }
 
 //     @GetMapping("/by-month-and-shop")

@@ -48,54 +48,14 @@ public class AdoptRecommendationController {
         
     }
 
-    @GetMapping("/pets")
-    public ResponseEntity<List<AdoptablePet>> getPetsBySpecies(
-            @RequestParam(required = true) String species
-    ) {
-        List<AdoptablePet> pets = adoptablePetService.findPetsBySpecies(species);
-        return ResponseEntity.ok(pets);
-    }
-
-    // @GetMapping("/suggestedPets")
-    // public ResponseEntity<List<AdoptablePet>> suggestPetsBasedOnSpeciesAndBusyState(
-    //         @RequestParam(required = true) String species,
-    //         @RequestParam(required = true) boolean busy
-    // ) {
-    //     // Your logic to suggest pets based on both species and the busy state
-    //     // You can call your service method with both parameters here
-
-    //     List<AdoptablePet> suggestedPets = adoptablePetService.suggestPetsByBehavior(species, busy);
-
-    //     if (!suggestedPets.isEmpty()) {
-    //         return ResponseEntity.ok(suggestedPets);
-    //     }
-
-    //     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-    // }  
-
-    // @GetMapping("/suggestedPetsByGender")
-    // public ResponseEntity<List<AdoptablePet>> suggestPetsBasedOnGender(
-    //         @RequestParam(required = true) String species,
-    //         @RequestParam(required = false) String gender,
-    //         @RequestParam(required = true) boolean busy
-    // ) {
-    //     List<AdoptablePet> suggestedPets = adoptablePetService.suggestPetsByGender(species, gender, busy);
-
-    //     if (!suggestedPets.isEmpty()) {
-    //         return ResponseEntity.ok(suggestedPets);
-    //     }
-
-    //     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-    // }
-
-     @GetMapping("/suggestion")
+     @GetMapping("/recommendation")
     public ResponseEntity<?> suggestPetsBasedOnBreed(
             @RequestParam(required = true) String species,
             @RequestParam(required = false) String gender,
             @RequestParam(required = false) String breed,
             @RequestParam(required = true) boolean busy
     ) {
-        List<AdoptablePet> suggestedPets = adoptablePetService.suggestPetsByBreed(species, gender,breed, busy);
+        List<AdoptablePet> suggestedPets = adoptablePetService.suggestPetsByUserPreference(species, gender,breed, busy);
 
         if (!suggestedPets.isEmpty()) {
             return ResponseEntity.ok(suggestedPets);

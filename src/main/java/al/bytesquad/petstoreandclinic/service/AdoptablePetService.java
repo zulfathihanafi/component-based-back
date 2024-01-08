@@ -75,11 +75,11 @@ public class AdoptablePetService {
         adoptablePetRepository.deleteById(id);
     }
 
-    public AdoptablePet recommendPet(String species, String breed, String colour, String size){
-        colour = (colour != null && colour.isEmpty()) ? null : colour;
-        size = (size != null && size.isEmpty()) ? null : size;
-        return adoptablePetRepository.findBySpeciesAndBreed(species, breed);
-    }
+    // public AdoptablePet recommendPet(String species, String breed, String colour, String size){
+    //     colour = (colour != null && colour.isEmpty()) ? null : colour;
+    //     size = (size != null && size.isEmpty()) ? null : size;
+    //     return adoptablePetRepository.findBySpeciesAndBreed(species, breed);
+    // }
 
     public List<AdoptablePet> getPetsBySpecies(String species) {
         return adoptablePetRepository.findBySpecies(species);
@@ -158,7 +158,7 @@ public class AdoptablePetService {
         return suggestedPets;
     }
 
-    public List<AdoptablePet> suggestPetsByBreed(String species, String gender, String breed, boolean isBusy) {
+    public List<AdoptablePet> suggestPetsByUserPreference(String species, String gender, String breed, boolean isBusy) {
         List<AdoptablePet> allPets = adoptablePetRepository.findBySpecies(species);
         List<AdoptablePet> suggestedPets = new ArrayList<>();
     

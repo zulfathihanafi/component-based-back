@@ -57,7 +57,7 @@ public class DoctorController {
     }
 
     //"delete" doctor
-    @GetMapping("/remove/{id}")
+    @PutMapping("/remove/{id}")// todo 我把 GetMapping改成PutMapping
     @CrossOrigin(origins = "http://localhost:3000")
     public String delete(@PathVariable(name = "id") long id) {
         return doctorService.delete(id);
